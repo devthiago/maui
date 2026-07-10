@@ -26,3 +26,26 @@ export function isNativeMarketplaceTarget(
 ): target is NativeMarketplaceTarget {
   return "marketplace" in target;
 }
+
+export type AdapterKind = "native-marketplace" | "symlink";
+export type Scope = "global" | "project";
+
+export interface InstalledAgentEntry {
+  agent: string;
+  scope: Scope;
+  kind: AdapterKind;
+  symlinks?: string[];
+  contextFiles?: string[];
+}
+
+export interface RegistryPluginEntry {
+  name: string;
+  source: string;
+  version: string;
+  installedAt: string;
+  agents: InstalledAgentEntry[];
+}
+
+export interface Registry {
+  plugins: Record<string, RegistryPluginEntry>;
+}

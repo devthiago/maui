@@ -56,7 +56,7 @@ enough to act on.
 
 ---
 
-## Task 3: Registry read/write
+## Task 3: Registry read/write ✅ done
 
 **Description:** Implement `core/registry.ts`: read/write
 `~/.maui/registry.json`, tracking installed plugins, their source, the
