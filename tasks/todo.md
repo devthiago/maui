@@ -169,7 +169,7 @@ end to end using the one adapter that's unconditional.
 
 ---
 
-## Task 7: `maui list` / `maui status`
+## Task 7: `maui list` / `maui status` ✅ done
 
 **Description:** Read the registry and print installed plugins, their
 source, version, and which agents/scopes each is active on.

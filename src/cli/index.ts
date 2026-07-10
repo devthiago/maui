@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { helpText, knownSubcommand } from "./commands";
 import { installPlugin } from "./install";
+import { listPlugins } from "./list";
 
 export interface CliResult {
   code: number;
@@ -36,6 +37,10 @@ export async function run(argv: string[]): Promise<CliResult> {
 
   if (command === "install") {
     return runInstall(rest);
+  }
+
+  if (command === "list" || command === "status") {
+    return { code: 0, stdout: await listPlugins() };
   }
 
   return { code: 1, stderr: `maui: "${command}" is not implemented yet` };
