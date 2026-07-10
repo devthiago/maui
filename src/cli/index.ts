@@ -3,6 +3,8 @@ import { helpText, knownSubcommand } from "./commands";
 import { installPlugin } from "./install";
 import { listPlugins } from "./list";
 import { removePlugin } from "./remove";
+import { linkPlugin } from "./link";
+import { unlinkPlugin } from "./unlink";
 
 export interface CliResult {
   code: number;
@@ -59,6 +61,50 @@ async function runRemove(args: string[]): Promise<CliResult> {
   }
 }
 
+function parseNameAndAgentArgs(args: string[]): { name?: string; agent?: string } {
+  let name: string | undefined;
+  let agent: string | undefined;
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--agent") {
+      agent = args[++i];
+    } else if (arg && !arg.startsWith("--") && !name) {
+      name = arg;
+    }
+  }
+
+  return { name, agent };
+}
+
+async function runLink(args: string[]): Promise<CliResult> {
+  const { name, agent } = parseNameAndAgentArgs(args);
+  if (!name || !agent) {
+    return { code: 1, stderr: "maui link: usage: maui link <plugin-name> --agent <agent-name>" };
+  }
+
+  try {
+    await linkPlugin(name, agent);
+    return { code: 0, stdout: `Linked ${name} → ${agent}` };
+  } catch (error) {
+    return { code: 1, stderr: `maui link: ${(error as Error).message}` };
+  }
+}
+
+async function runUnlink(args: string[]): Promise<CliResult> {
+  const { name, agent } = parseNameAndAgentArgs(args);
+  if (!name || !agent) {
+    return { code: 1, stderr: "maui unlink: usage: maui unlink <plugin-name> --agent <agent-name>" };
+  }
+
+  try {
+    await unlinkPlugin(name, agent);
+    return { code: 0, stdout: `Unlinked ${name} from ${agent}` };
+  } catch (error) {
+    return { code: 1, stderr: `maui unlink: ${(error as Error).message}` };
+  }
+}
+
 export async function run(argv: string[]): Promise<CliResult> {
   const [command, ...rest] = argv;
 
@@ -80,6 +126,14 @@ export async function run(argv: string[]): Promise<CliResult> {
 
   if (command === "remove") {
     return runRemove(rest);
+  }
+
+  if (command === "link") {
+    return runLink(rest);
+  }
+
+  if (command === "unlink") {
+    return runUnlink(rest);
   }
 
   return { code: 1, stderr: `maui: "${command}" is not implemented yet` };

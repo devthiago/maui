@@ -51,12 +51,12 @@ postinstall/postremove hooks.
 - [x] Task 6: Generic `.agents` fallback adapter + `maui install` wiring
 - [x] Task 7: `maui list` / `maui status`
 - [x] Task 8: `maui remove` (symlink path) + `--purge`
-- [ ] Task 9: `maui link` / `maui unlink`
+- [x] Task 9: `maui link` / `maui unlink`
 
 ### Checkpoint: Phase 3
-- [ ] `maui install <local-plugin>` populates `~/.agents/...` correctly end to end
-- [ ] `maui remove` cleans up with no orphaned symlinks or backup files
-- [ ] Two plugins sharing a `skills/` container don't clobber each other
+- [x] `maui install <local-plugin>` populates `~/.agents/...` correctly end to end
+- [x] `maui remove` cleans up with no orphaned symlinks or backup files
+- [x] Two plugins sharing a `skills/` container don't clobber each other
 
 ### Phase 4: Remaining symlink adapters
 - [ ] Task 10: Cursor adapter

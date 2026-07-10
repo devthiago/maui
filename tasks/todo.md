@@ -215,7 +215,7 @@ optionally delete the cached source with `--purge`.
 
 ---
 
-## Task 9: `maui link` / `maui unlink`
+## Task 9: `maui link` / `maui unlink` ✅ done
 
 **Description:** Attach or detach an already-cached plugin to/from a
 specific agent without re-fetching — the same linker primitive as

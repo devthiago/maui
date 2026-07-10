@@ -5,6 +5,7 @@ import { readManifest } from "../core/manifest";
 import { linkChildren } from "../core/linker";
 import { readRegistry, writeRegistry } from "../core/registry";
 import { genericAgentsAdapter } from "../adapters/generic-agents";
+import { getSymlinkAdapter } from "../adapters/registry";
 import { isNativeMarketplaceTarget } from "../types";
 import type { InstalledAgentEntry, SymlinkTargetMap } from "../types";
 
@@ -28,16 +29,17 @@ export async function installPlugin(
 
   const agents: InstalledAgentEntry[] = [];
 
-  const defaultTarget = manifest.targets._default;
+  const defaultTarget = manifest.targets[genericAgentsAdapter.id];
+  const defaultAdapter = getSymlinkAdapter(genericAgentsAdapter.id)!;
   if (defaultTarget && !isNativeMarketplaceTarget(defaultTarget)) {
     const symlinks: string[] = [];
     for (const [sourceRel, destRel] of Object.entries(defaultTarget as SymlinkTargetMap)) {
       const sourceChildDir = join(pluginDir, sourceRel);
-      const containerDir = join(genericAgentsAdapter.globalRoot(home), destRel);
+      const containerDir = join(defaultAdapter.globalRoot(home), destRel);
       const result = await linkChildren(sourceChildDir, containerDir);
       symlinks.push(...result.linked);
     }
-    agents.push({ agent: genericAgentsAdapter.id, scope: "global", kind: "symlink", symlinks });
+    agents.push({ agent: defaultAdapter.id, scope: "global", kind: "symlink", symlinks });
   }
 
   const registry = await readRegistry(home);

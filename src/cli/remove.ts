@@ -5,13 +5,9 @@ import { createInterface } from "node:readline/promises";
 import { readRegistry, writeRegistry } from "../core/registry";
 import { unlinkChildren } from "../core/linker";
 import { pluginsRoot } from "../core/fetch";
+import { PluginNotFoundError } from "../core/errors";
 
-export class PluginNotFoundError extends Error {
-  constructor(name: string) {
-    super(`Plugin "${name}" is not installed`);
-    this.name = "PluginNotFoundError";
-  }
-}
+export { PluginNotFoundError };
 
 export interface RemoveOptions {
   home?: string;
