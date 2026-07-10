@@ -76,7 +76,7 @@ postinstall/postremove hooks.
       postinstall/`upsertBlock` mechanism (Phase 6) instead, revisited later.
 
 ### Phase 5: Native-marketplace adapters
-- [ ] Task 13: `marketplace-exec.ts` shared shell-out primitive
+- [x] Task 13: `marketplace-exec.ts` shared shell-out primitive
 - [ ] Task 14: Claude Code adapter
 - [ ] Task 15: Gemini CLI adapter
 - [ ] Task 16: Codex CLI adapter (third-party `codex-marketplace`, ask-first consent)

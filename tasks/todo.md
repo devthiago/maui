@@ -322,7 +322,7 @@ concern since maui just places files.)
 
 ---
 
-## Task 13: `marketplace-exec.ts` shared shell-out primitive
+## Task 13: `marketplace-exec.ts` shared shell-out primitive ✅ done
 
 **Description:** Implement `core/marketplace-exec.ts`: run a native CLI
 subcommand (via Bun's subprocess API), capture stdout/stderr/exit code, and
