@@ -1,0 +1,20 @@
+{
+  "name": "maui",
+  "version": "0.1.0",
+  "description": "Global multi-agent toolset installer",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "maui": "src/cli/index.ts"
+  },
+  "scripts": {
+    "build": "bun build ./src/cli/index.ts --outdir dist --target node",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}
