@@ -82,7 +82,7 @@ agents/scopes they're active on (native-installed vs. symlinked), and
 
 ---
 
-## Task 4: Plugin source fetch
+## Task 4: Plugin source fetch ✅ done
 
 **Description:** Implement `core/fetch.ts`: given a source (git URL or local
 path), populate `~/.maui/plugins/<name>` with the plugin's files. For a git

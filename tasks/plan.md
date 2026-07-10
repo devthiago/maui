@@ -39,7 +39,7 @@ postinstall/postremove hooks.
 ### Phase 2: Core primitives (no adapters yet)
 - [x] Task 2: Plugin manifest parsing & validation
 - [x] Task 3: Registry read/write
-- [ ] Task 4: Plugin source fetch (git clone/pull + local path)
+- [x] Task 4: Plugin source fetch (git clone/pull + local path)
 
 ### Checkpoint: Phase 1-2
 - [ ] `bun test` passes, `bun build` succeeds
