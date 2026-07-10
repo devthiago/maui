@@ -378,7 +378,7 @@ for `claude plugin marketplace add`, since Task 23's scaffold depends on it.
 
 ---
 
-## Task 15: Gemini CLI adapter
+## Task 15: Gemini CLI adapter ✅ done
 
 **Description:** Implement `adapters/gemini.ts`: detect via
 `Bun.which("gemini")`, install via
