@@ -59,9 +59,21 @@ postinstall/postremove hooks.
 - [x] Two plugins sharing a `skills/` container don't clobber each other
 
 ### Phase 4: Remaining symlink adapters
-- [ ] Task 10: Cursor adapter
-- [ ] Task 11: Windsurf adapter
-- [ ] Task 12: Kiro adapter
+- [ ] Task 12: Kiro adapter — both project (`.kiro/steering/`) and global
+      (`~/.kiro/steering/`) conventions confirmed as real directories; fits
+      the existing model directly.
+- [ ] Task 10: Cursor adapter — **DEFERRED to after Task 22.** Cursor's
+      "User Rules" (global scope) are UI/database-managed, not a filesystem
+      folder — no global-scope adapter to build. Only its project-scope
+      target (`.cursor/rules/`) is real, so this is picked up once
+      project-scope resolution exists. The always-on `.agents/rules/`
+      fallback already covers the global case in the meantime.
+- [ ] Task 11: Windsurf adapter — **DEFERRED to after Task 22.** Windsurf's
+      global rules file (`~/.codeium/windsurf/memories/global_rules.md`) is
+      a single shared file, not a directory — doesn't fit the
+      per-child-symlink model. Only its project-scope target
+      (`.windsurf/rules/`) fits now; global support belongs with the
+      postinstall/`upsertBlock` mechanism (Phase 6) instead, revisited later.
 
 ### Phase 5: Native-marketplace adapters
 - [ ] Task 13: `marketplace-exec.ts` shared shell-out primitive

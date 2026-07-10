@@ -238,22 +238,25 @@ specific agent without re-fetching — the same linker primitive as
 
 ---
 
-## Task 10: Cursor adapter
+## Task 10: Cursor adapter — DEFERRED to after Task 22 (project scope)
 
-**Description:** Research Cursor's actual global/project rules-folder
-convention (SPEC.md Open Question #1 — not yet verified) and implement
-`adapters/cursor.ts` accordingly: detection (folder and/or CLI) and target
-path mapping.
+**Research finding (cursor.com/docs/context/rules):** project-level rules
+(`.cursor/rules/*.mdc`) are a real directory of files and fit the existing
+`linkChildren` model fine. But Cursor's **global** "User Rules" are managed
+through Cursor's UI/database — there is no filesystem folder for them.
+Only `~/.cursor/mcp.json` is confirmed to exist globally (for MCP servers),
+not rules.
 
-**Acceptance criteria:**
-- [ ] Convention confirmed against Cursor's own docs before coding (cite the source)
-- [ ] Detection correctly identifies a fixture "Cursor installed" vs. "not installed" `$HOME`
-- [ ] A plugin's mapped folder links into the confirmed target path
+**Decision (user-confirmed):** don't build a dedicated global-scope
+`GlobalSymlinkAdapter` for Cursor — the always-on `.agents/rules/` fallback
+(Task 6) already covers the global case for any tool that reads it by
+convention. Cursor's only real remaining work is its project-scope target
+(`.cursor/rules/`), which is implemented as part of/after Task 22 once
+project-scope resolution exists, instead of a standalone global-only task.
 
-**Verification:**
-- [ ] `bun test tests/integration/cursor.test.ts` passes against a fixture `$HOME`
-
-**Dependencies:** Task 5, Task 6
+**Acceptance criteria (once picked up after Task 22):**
+- [ ] `.cursor/rules/` in a project gets the plugin's mapped rules per-child-symlinked, using project-scope resolution
+- [ ] No global-scope Cursor adapter is registered — global installs rely solely on the `.agents` fallback
 
 **Files likely touched:**
 - `src/adapters/cursor.ts`
@@ -263,20 +266,26 @@ path mapping.
 
 ---
 
-## Task 11: Windsurf adapter
+## Task 11: Windsurf adapter — DEFERRED to after Task 22 (project scope)
 
-**Description:** Same shape as Task 10, for Windsurf — research its actual
-folder convention first (SPEC.md Open Question #1), then implement
-`adapters/windsurf.ts`.
+**Research finding (docs.devin.ai/desktop/cascade/memories, Windsurf/Devin
+merged docs):** project-level rules (`.windsurf/rules/*.md` or
+`.devin/rules/*.md`) are a real directory of files and fit the existing
+model. Windsurf's **global** rules do have a confirmed filesystem path —
+`~/.codeium/windsurf/memories/global_rules.md` — but it's a single shared
+file, not a directory, so it doesn't fit `linkChildren`'s per-child-symlink
+model at all; merging content into it is the same kind of problem Task
+19-21's `contextFile`/`upsertBlock` mechanism solves for CLAUDE.md/GEMINI.md.
 
-**Acceptance criteria:**
-- [ ] Convention confirmed against Windsurf's own docs before coding (cite the source)
-- [ ] Detection + linking work against a fixture `$HOME`
+**Decision (user-confirmed):** same as Cursor — no dedicated global-scope
+adapter for now; the `.agents/rules/` fallback covers the global case.
+Windsurf's project-scope target (`.windsurf/rules/`) is implemented as part
+of/after Task 22. Revisit `global_rules.md` support later using the
+postinstall/`upsertBlock` machinery, not the directory-symlink adapter path.
 
-**Verification:**
-- [ ] `bun test tests/integration/windsurf.test.ts` passes
-
-**Dependencies:** Task 5, Task 6
+**Acceptance criteria (once picked up after Task 22):**
+- [ ] `.windsurf/rules/` in a project gets the plugin's mapped rules per-child-symlinked, using project-scope resolution
+- [ ] No global-scope Windsurf adapter is registered — global installs rely solely on the `.agents` fallback
 
 **Files likely touched:**
 - `src/adapters/windsurf.ts`
@@ -288,19 +297,25 @@ folder convention first (SPEC.md Open Question #1), then implement
 
 ## Task 12: Kiro adapter
 
-**Description:** Same shape as Task 10/11, for Kiro.
+**Research finding (kiro.dev/docs/steering/):** both project (`.kiro/steering/`)
+and global (`~/.kiro/steering/`) conventions are confirmed, real directories
+of files — fits the existing `GlobalSymlinkAdapter`/`linkChildren` model
+directly, no design changes needed. (Global takes lower priority than
+workspace steering when both exist, per Kiro's own docs — not maui's
+concern since maui just places files.)
 
 **Acceptance criteria:**
-- [ ] Convention confirmed against Kiro's own docs before coding (cite the source)
+- [x] Convention confirmed against Kiro's own docs before coding (cite the source)
 - [ ] Detection + linking work against a fixture `$HOME`
 
 **Verification:**
 - [ ] `bun test tests/integration/kiro.test.ts` passes
 
-**Dependencies:** Task 5, Task 6
+**Dependencies:** Task 5, Task 6, Task 9 (adapter registry)
 
 **Files likely touched:**
 - `src/adapters/kiro.ts`
+- `src/adapters/registry.ts`
 - `tests/integration/kiro.test.ts`
 
 **Estimated scope:** Small
