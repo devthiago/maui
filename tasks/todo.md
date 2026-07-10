@@ -347,7 +347,7 @@ once, generically, before the first adapter that needs it.
 
 ---
 
-## Task 14: Claude Code adapter
+## Task 14: Claude Code adapter ✅ done
 
 **Description:** Implement `adapters/claude-code.ts`: detect via
 `Bun.which("claude")`, install via

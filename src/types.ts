@@ -49,3 +49,17 @@ export interface RegistryPluginEntry {
 export interface Registry {
   plugins: Record<string, RegistryPluginEntry>;
 }
+
+export interface NativeMarketplaceIdentity {
+  pluginName: string;
+  repo: string;
+  marketplaceName: string;
+}
+
+export interface NativeMarketplaceAdapter {
+  id: string;
+  kind: "native-marketplace";
+  detect(): Promise<boolean>;
+  install(identity: NativeMarketplaceIdentity): Promise<void>;
+  remove(identity: NativeMarketplaceIdentity): Promise<void>;
+}
