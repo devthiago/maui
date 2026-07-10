@@ -1,6 +1,6 @@
 # Task List: maui
 
-## Task 1: Project scaffolding
+## Task 1: Project scaffolding ✅ done
 
 **Description:** Set up the Bun/TypeScript project skeleton: `package.json`,
 `tsconfig.json`, a `src/cli/index.ts` entrypoint that parses argv and
