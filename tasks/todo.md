@@ -518,7 +518,7 @@ confirmed to exist, arguments weren't) before finalizing install/remove:
 
 ---
 
-## Task 19: Per-adapter `contextFile` resolution
+## Task 19: Per-adapter `contextFile` resolution ✅ done
 
 **Description:** Implement `core/context-file.ts`: given an agent id and
 scope, return the best-known "memory/context markdown file" path — confirmed

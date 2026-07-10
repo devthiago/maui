@@ -91,7 +91,7 @@ postinstall/postremove hooks.
       (Task 18b, added mid-build to close this gap — see tasks/todo.md)
 
 ### Phase 6: Postinstall / Postremove hooks
-- [ ] Task 19: Per-adapter `contextFile` resolution
+- [x] Task 19: Per-adapter `contextFile` resolution
 - [ ] Task 20: Postinstall/postremove execution + `upsertBlock` + consent prompts
 - [ ] Task 21: Wire hooks into install/remove flow, registry tracking for auto-cleanup
 
