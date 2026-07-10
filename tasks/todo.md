@@ -27,7 +27,7 @@ git repository so subsequent tasks can commit.
 
 ---
 
-## Task 2: Plugin manifest parsing & validation
+## Task 2: Plugin manifest parsing & validation ✅ done
 
 **Description:** Implement `core/manifest.ts`: parse a `maui.json` file into
 a typed structure and validate it (required `name`/`version`, `targets` is

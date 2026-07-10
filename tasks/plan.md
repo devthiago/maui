@@ -37,7 +37,7 @@ postinstall/postremove hooks.
 - [x] Task 1: Project scaffolding (Bun/TS project, CLI entrypoint, git init)
 
 ### Phase 2: Core primitives (no adapters yet)
-- [ ] Task 2: Plugin manifest parsing & validation
+- [x] Task 2: Plugin manifest parsing & validation
 - [ ] Task 3: Registry read/write
 - [ ] Task 4: Plugin source fetch (git clone/pull + local path)
 
