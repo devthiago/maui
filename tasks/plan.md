@@ -79,7 +79,7 @@ postinstall/postremove hooks.
 - [x] Task 13: `marketplace-exec.ts` shared shell-out primitive
 - [x] Task 14: Claude Code adapter
 - [x] Task 15: Gemini CLI adapter
-- [ ] Task 16: Codex CLI adapter (third-party `codex-marketplace`, ask-first consent)
+- [x] Task 16: Codex CLI adapter (third-party `codex-marketplace`, ask-first consent)
 - [ ] Task 17: OpenCode adapter
 - [ ] Task 18: Grok CLI adapter
 

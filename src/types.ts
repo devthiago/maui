@@ -56,10 +56,15 @@ export interface NativeMarketplaceIdentity {
   marketplaceName: string;
 }
 
+export interface NativeAdapterRuntimeOptions {
+  home?: string;
+  confirm?: (message: string) => Promise<boolean>;
+}
+
 export interface NativeMarketplaceAdapter {
   id: string;
   kind: "native-marketplace";
   detect(): Promise<boolean>;
-  install(identity: NativeMarketplaceIdentity): Promise<void>;
-  remove(identity: NativeMarketplaceIdentity): Promise<void>;
+  install(identity: NativeMarketplaceIdentity, options?: NativeAdapterRuntimeOptions): Promise<void>;
+  remove(identity: NativeMarketplaceIdentity, options?: NativeAdapterRuntimeOptions): Promise<void>;
 }

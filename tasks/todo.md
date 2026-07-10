@@ -406,7 +406,7 @@ remove manually" rather than guessing a command that might not exist.
 
 ---
 
-## Task 16: Codex CLI adapter (third-party `codex-marketplace`)
+## Task 16: Codex CLI adapter (third-party `codex-marketplace`) ✅ done
 
 **Description:** Implement `adapters/codex.ts`: detect via
 `Bun.which("codex")`, install via
