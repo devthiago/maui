@@ -141,7 +141,7 @@ have since changed).
 
 ---
 
-## Task 6: Generic `.agents` fallback adapter + `maui install` wiring
+## Task 6: Generic `.agents` fallback adapter + `maui install` wiring ✅ done
 
 **Description:** Implement `adapters/generic-agents.ts` (the always-on
 fallback) and wire together fetch → manifest → linker → registry behind

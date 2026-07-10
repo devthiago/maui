@@ -49,7 +49,7 @@ per agent, does whichever of the two things is correct for that agent:
 ## Commands
 
 ```
-Build:  bun build ./src/cli/index.ts --outdir dist --target node
+Build:  bun build ./src/cli/index.ts --outdir dist --target bun
 Test:   bun test
 Test (watch): bun test --watch
 Lint:   bun run lint

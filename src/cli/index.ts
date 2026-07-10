@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { helpText, knownSubcommand } from "./commands";
+import { installPlugin } from "./install";
 
 export interface CliResult {
   code: number;
@@ -7,8 +8,23 @@ export interface CliResult {
   stderr?: string;
 }
 
-export function run(argv: string[]): CliResult {
-  const [command] = argv;
+async function runInstall(args: string[]): Promise<CliResult> {
+  const source = args.find((arg) => !arg.startsWith("--"));
+  if (!source) {
+    return { code: 1, stderr: "maui install: missing <source> argument" };
+  }
+
+  try {
+    const result = await installPlugin(source);
+    const agentNames = result.agents.map((entry) => entry.agent).join(", ") || "no agents";
+    return { code: 0, stdout: `Installed ${result.pluginName} → ${agentNames}` };
+  } catch (error) {
+    return { code: 1, stderr: `maui install: ${(error as Error).message}` };
+  }
+}
+
+export async function run(argv: string[]): Promise<CliResult> {
+  const [command, ...rest] = argv;
 
   if (!command || command === "help") {
     return { code: 0, stdout: helpText() };
@@ -18,11 +34,15 @@ export function run(argv: string[]): CliResult {
     return { code: 1, stderr: `maui: unknown command "${command}"\n\n${helpText()}` };
   }
 
+  if (command === "install") {
+    return runInstall(rest);
+  }
+
   return { code: 1, stderr: `maui: "${command}" is not implemented yet` };
 }
 
 if (import.meta.main) {
-  const result = run(Bun.argv.slice(2));
+  const result = await run(Bun.argv.slice(2));
   if (result.stdout) console.log(result.stdout);
   if (result.stderr) console.error(result.stderr);
   process.exit(result.code);
