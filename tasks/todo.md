@@ -295,7 +295,7 @@ postinstall/`upsertBlock` machinery, not the directory-symlink adapter path.
 
 ---
 
-## Task 12: Kiro adapter
+## Task 12: Kiro adapter ✅ done
 
 **Research finding (kiro.dev/docs/steering/):** both project (`.kiro/steering/`)
 and global (`~/.kiro/steering/`) conventions are confirmed, real directories

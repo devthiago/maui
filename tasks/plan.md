@@ -59,7 +59,7 @@ postinstall/postremove hooks.
 - [x] Two plugins sharing a `skills/` container don't clobber each other
 
 ### Phase 4: Remaining symlink adapters
-- [ ] Task 12: Kiro adapter — both project (`.kiro/steering/`) and global
+- [x] Task 12: Kiro adapter — both project (`.kiro/steering/`) and global
       (`~/.kiro/steering/`) conventions confirmed as real directories; fits
       the existing model directly.
 - [ ] Task 10: Cursor adapter — **DEFERRED to after Task 22.** Cursor's
