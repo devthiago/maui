@@ -108,7 +108,7 @@ for local sources.
 
 ---
 
-## Task 5: Symlink linker (per-child rule + conflict backup)
+## Task 5: Symlink linker (per-child rule + conflict backup) ✅ done
 
 **Description:** Implement `core/linker.ts` per SPEC.md's "Symlinking rule:
 only final files/folders, never the parent": given a source folder and a

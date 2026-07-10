@@ -47,7 +47,7 @@ postinstall/postremove hooks.
 - [ ] A local-path plugin source can be "fetched" into `~/.maui/plugins/<name>`
 
 ### Phase 3: Walking skeleton (symlink path via the always-on fallback)
-- [ ] Task 5: Symlink linker (per-child symlink rule + conflict backup)
+- [x] Task 5: Symlink linker (per-child symlink rule + conflict backup)
 - [ ] Task 6: Generic `.agents` fallback adapter + `maui install` wiring
 - [ ] Task 7: `maui list` / `maui status`
 - [ ] Task 8: `maui remove` (symlink path) + `--purge`
