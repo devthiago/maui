@@ -4,3 +4,10 @@ export class PluginNotFoundError extends Error {
     this.name = "PluginNotFoundError";
   }
 }
+
+export class UnsupportedRemovalError extends Error {
+  constructor(pluginName: string, hint: string) {
+    super(`Removing "${pluginName}" is not supported yet — ${hint}`);
+    this.name = "UnsupportedRemovalError";
+  }
+}

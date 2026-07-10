@@ -433,7 +433,7 @@ confirmation (it's not an OpenAI-official CLI).
 
 ---
 
-## Task 17: OpenCode adapter
+## Task 17: OpenCode adapter ✅ done
 
 **Description:** Implement `adapters/opencode.ts`: detect via
 `Bun.which("opencode")`, install via `opencode plugin <module> [--global]`

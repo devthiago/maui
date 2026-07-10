@@ -54,6 +54,7 @@ export interface NativeMarketplaceIdentity {
   pluginName: string;
   repo: string;
   marketplaceName: string;
+  package?: string;
 }
 
 export interface NativeAdapterRuntimeOptions {

@@ -1,12 +1,8 @@
 import { resolveBinary, runNativeCommand } from "../core/marketplace-exec";
+import { UnsupportedRemovalError } from "../core/errors";
 import type { NativeMarketplaceAdapter } from "../types";
 
-export class UnsupportedRemovalError extends Error {
-  constructor(pluginName: string, hint: string) {
-    super(`Removing "${pluginName}" is not supported yet — ${hint}`);
-    this.name = "UnsupportedRemovalError";
-  }
-}
+export { UnsupportedRemovalError };
 
 /**
  * `gemini extensions install <github-url>` is confirmed at
