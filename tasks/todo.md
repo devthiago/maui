@@ -461,7 +461,7 @@ guess a nonexistent CLI command.
 
 ---
 
-## Task 18: Grok CLI adapter
+## Task 18: Grok CLI adapter ✅ done
 
 **Description:** Implement `adapters/grok.ts`: detect via
 `Bun.which("grok")`. Confirm exact argument shape via `grok plugin --help`
