@@ -191,7 +191,7 @@ source, version, and which agents/scopes each is active on.
 
 ---
 
-## Task 8: `maui remove` (symlink path) + `--purge`
+## Task 8: `maui remove` (symlink path) + `--purge` ✅ done
 
 **Description:** Remove a plugin's symlinks (via the linker's removal path)
 across every agent/scope it's registered against, update the registry, and

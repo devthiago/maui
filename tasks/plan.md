@@ -50,7 +50,7 @@ postinstall/postremove hooks.
 - [x] Task 5: Symlink linker (per-child symlink rule + conflict backup)
 - [x] Task 6: Generic `.agents` fallback adapter + `maui install` wiring
 - [x] Task 7: `maui list` / `maui status`
-- [ ] Task 8: `maui remove` (symlink path) + `--purge`
+- [x] Task 8: `maui remove` (symlink path) + `--purge`
 - [ ] Task 9: `maui link` / `maui unlink`
 
 ### Checkpoint: Phase 3
