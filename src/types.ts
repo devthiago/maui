@@ -36,6 +36,7 @@ export interface InstalledAgentEntry {
   kind: AdapterKind;
   symlinks?: string[];
   contextFiles?: string[];
+  identity?: NativeMarketplaceIdentity;
 }
 
 export interface RegistryPluginEntry {

@@ -84,10 +84,11 @@ postinstall/postremove hooks.
 - [x] Task 18: Grok CLI adapter
 
 ### Checkpoint: Phase 4-5
-- [ ] Every adapter has a passing integration test (fixture `$HOME` for symlink
+- [x] Every adapter has a passing integration test (fixture `$HOME` for symlink
       adapters, fake CLI on fixture `$PATH` for native-marketplace adapters)
-- [ ] `maui install` on a machine with multiple agents detected produces the
+- [x] `maui install` on a machine with multiple agents detected produces the
       right outcome per agent, with undetected agents skipped and reported
+      (Task 18b, added mid-build to close this gap — see tasks/todo.md)
 
 ### Phase 6: Postinstall / Postremove hooks
 - [ ] Task 19: Per-adapter `contextFile` resolution

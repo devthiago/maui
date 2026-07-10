@@ -1,5 +1,36 @@
 # Task List: maui
 
+## Task 18b: Wire all adapters into installPlugin/removePlugin orchestration ✅ done
+
+**Added mid-build:** Tasks 6/10-18 each built one adapter and tested it in
+isolation (`linkPlugin`/adapter functions directly), but nothing looped
+over *every* target in a manifest and dispatched to whichever adapter (and
+scope) applied — the Phase 4-5 checkpoint ("`maui install` on a machine
+with multiple agents detected produces the right outcome per agent, with
+undetected agents skipped and reported") had no task actually building it.
+
+**What changed:**
+- `GlobalSymlinkAdapter` gained an optional `detect(home)` — omitted means
+  always-present (the `.agents` fallback), present means gate linking on it
+  (Kiro: does `~/.kiro` exist).
+- New `getNativeMarketplaceAdapter(agentId)` registry alongside the
+  existing symlink one.
+- `installPlugin()` now loops over every `manifest.targets` entry,
+  dispatching to the native-marketplace or symlink path per entry,
+  detecting first and recording what got skipped and why.
+- `removePlugin()` now calls the matching native adapter's `remove()` for
+  `kind: "native-marketplace"` entries, using an `identity` object
+  persisted on the registry entry at install time (not re-derived from a
+  possibly-changed manifest at remove time).
+
+**Verification:** `bun test tests/integration/install-multi-agent.test.ts`
+— a manifest with a native-marketplace target (fake `claude` on `$PATH`), a
+detected-vs-undetected symlink target (Kiro), and the always-on fallback,
+proving detected agents install, undetected ones are skipped and reported,
+and remove runs the real uninstall command.
+
+---
+
 ## Task 1: Project scaffolding ✅ done
 
 **Description:** Set up the Bun/TypeScript project skeleton: `package.json`,

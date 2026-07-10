@@ -1,3 +1,15 @@
+import { lstat } from "node:fs/promises";
+import { join } from "node:path";
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await lstat(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Kiro's steering files live at .kiro/steering/ relative to a scope root
  * (project dir or $HOME) — confirmed for both project and global scope at
@@ -9,5 +21,8 @@ export const kiroAdapter = {
   id: "kiro",
   globalRoot(home: string): string {
     return home;
+  },
+  async detect(home: string): Promise<boolean> {
+    return pathExists(join(home, ".kiro"));
   },
 };

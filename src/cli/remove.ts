@@ -6,6 +6,7 @@ import { readRegistry, writeRegistry } from "../core/registry";
 import { unlinkChildren } from "../core/linker";
 import { pluginsRoot } from "../core/fetch";
 import { PluginNotFoundError } from "../core/errors";
+import { getNativeMarketplaceAdapter } from "../adapters/registry";
 
 export { PluginNotFoundError };
 
@@ -47,9 +48,12 @@ export async function removePlugin(name: string, options: RemoveOptions = {}): P
   for (const agentEntry of toRemove) {
     if (agentEntry.kind === "symlink" && agentEntry.symlinks) {
       await unlinkChildren(agentEntry.symlinks);
+    } else if (agentEntry.kind === "native-marketplace" && agentEntry.identity) {
+      const adapter = getNativeMarketplaceAdapter(agentEntry.agent);
+      if (adapter) {
+        await adapter.remove(agentEntry.identity, { home });
+      }
     }
-    // Native-marketplace removal (shelling out to the agent's own uninstall
-    // command) is wired in once those adapters exist (Task 14+).
   }
 
   if (remaining.length > 0) {
