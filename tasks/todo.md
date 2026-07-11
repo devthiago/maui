@@ -675,7 +675,7 @@ pushing or creating a remote.
 
 ---
 
-## Task 24: `maui update`
+## Task 24: `maui update` ✅ done
 
 **Description:** For symlink-cached plugins, pull the latest commit into
 `~/.maui/plugins/<name>` and confirm every previously-linked agent reflects

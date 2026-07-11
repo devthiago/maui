@@ -6,6 +6,8 @@ import { removePlugin } from "./remove";
 import { linkPlugin } from "./link";
 import { unlinkPlugin } from "./unlink";
 import { createPlugin } from "./create";
+import { updatePlugin } from "./update";
+import { readRegistry } from "../core/registry";
 
 export interface CliResult {
   code: number;
@@ -140,6 +142,30 @@ async function runCreate(args: string[]): Promise<CliResult> {
   }
 }
 
+async function runUpdate(args: string[]): Promise<CliResult> {
+  const name = args.find((arg) => !arg.startsWith("--"));
+
+  try {
+    const names = name ? [name] : Object.keys((await readRegistry()).plugins);
+    if (names.length === 0) {
+      return { code: 0, stdout: "No plugins installed." };
+    }
+
+    const lines: string[] = [];
+    for (const pluginName of names) {
+      const result = await updatePlugin(pluginName);
+      const status = result.refreshed ? "refreshed" : "no symlink-cached agents to refresh";
+      lines.push(`Updated ${result.pluginName} (${status})`);
+      if (result.nativeAgentHints.length > 0) {
+        lines.push(...result.nativeAgentHints.map((hint) => `  ${hint}`));
+      }
+    }
+    return { code: 0, stdout: lines.join("\n") };
+  } catch (error) {
+    return { code: 1, stderr: `maui update: ${(error as Error).message}` };
+  }
+}
+
 export async function run(argv: string[]): Promise<CliResult> {
   const [command, ...rest] = argv;
 
@@ -173,6 +199,10 @@ export async function run(argv: string[]): Promise<CliResult> {
 
   if (command === "create") {
     return runCreate(rest);
+  }
+
+  if (command === "update") {
+    return runUpdate(rest);
   }
 
   return { code: 1, stderr: `maui: "${command}" is not implemented yet` };

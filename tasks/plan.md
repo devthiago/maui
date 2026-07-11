@@ -105,12 +105,14 @@ postinstall/postremove hooks.
 - [x] Task 23: `maui create <plugin-name>`
 
 ### Phase 9: Update
-- [ ] Task 24: `maui update`
+- [x] Task 24: `maui update`
 
 ### Checkpoint: Complete
-- [ ] All SPEC.md Success Criteria pass manually against a fixture machine
-- [ ] `bun test` and `bun build` clean
-- [ ] Ready for human review
+- [~] All SPEC.md Success Criteria pass — mostly, with documented exceptions
+      (native-marketplace project scope, a few unconfirmed native-CLI
+      commands); see the end-of-build summary
+- [x] `bun test` and `bun build` clean (104 tests passing)
+- [x] Ready for human review
 
 ## Risks and Mitigations
 
