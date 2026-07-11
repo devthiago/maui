@@ -1,5 +1,7 @@
 import { genericAgentsAdapter } from "./generic-agents";
 import { kiroAdapter } from "./kiro";
+import { cursorAdapter } from "./cursor";
+import { windsurfAdapter } from "./windsurf";
 import { claudeCodeAdapter } from "./claude-code";
 import { geminiAdapter } from "./gemini";
 import { codexAdapter } from "./codex";
@@ -9,7 +11,9 @@ import type { NativeMarketplaceAdapter } from "../types";
 
 export interface GlobalSymlinkAdapter {
   id: string;
-  globalRoot(home: string): string;
+  /** Omitted => this adapter has no global filesystem target (e.g. Cursor's
+   * "User Rules" are UI/database-managed); global installs skip it. */
+  globalRoot?(home: string): string;
   /** Omitted => always considered present (the always-on .agents fallback). */
   detect?(home: string): Promise<boolean>;
   /** Omitted => this adapter has no project-scope target; project installs skip it. */
@@ -19,6 +23,8 @@ export interface GlobalSymlinkAdapter {
 const SYMLINK_ADAPTERS: Record<string, GlobalSymlinkAdapter> = {
   [genericAgentsAdapter.id]: genericAgentsAdapter,
   [kiroAdapter.id]: kiroAdapter,
+  [cursorAdapter.id]: cursorAdapter,
+  [windsurfAdapter.id]: windsurfAdapter,
 };
 
 const NATIVE_MARKETPLACE_ADAPTERS: Record<string, NativeMarketplaceAdapter> = {

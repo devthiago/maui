@@ -269,7 +269,7 @@ specific agent without re-fetching — the same linker primitive as
 
 ---
 
-## Task 10: Cursor adapter — DEFERRED to after Task 22 (project scope)
+## Task 10: Cursor adapter ✅ done (project scope only, as planned)
 
 **Research finding (cursor.com/docs/context/rules):** project-level rules
 (`.cursor/rules/*.mdc`) are a real directory of files and fit the existing
@@ -297,7 +297,7 @@ project-scope resolution exists, instead of a standalone global-only task.
 
 ---
 
-## Task 11: Windsurf adapter — DEFERRED to after Task 22 (project scope)
+## Task 11: Windsurf adapter ✅ done (project scope only, as planned)
 
 **Research finding (docs.devin.ai/desktop/cascade/memories, Windsurf/Devin
 merged docs):** project-level rules (`.windsurf/rules/*.md` or

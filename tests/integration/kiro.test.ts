@@ -39,7 +39,7 @@ describe("kiroAdapter", () => {
 
   it("resolves its global root to $HOME, since Kiro's own dot-folder is scope-relative", () => {
     const adapter = getSymlinkAdapter("kiro")!;
-    expect(adapter.globalRoot("/home/user")).toBe("/home/user");
+    expect(adapter.globalRoot?.("/home/user")).toBe("/home/user");
   });
 
   it("links a plugin's rules/ into ~/.kiro/steering/ via linkPlugin", async () => {

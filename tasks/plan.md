@@ -62,18 +62,18 @@ postinstall/postremove hooks.
 - [x] Task 12: Kiro adapter — both project (`.kiro/steering/`) and global
       (`~/.kiro/steering/`) conventions confirmed as real directories; fits
       the existing model directly.
-- [ ] Task 10: Cursor adapter — **DEFERRED to after Task 22.** Cursor's
-      "User Rules" (global scope) are UI/database-managed, not a filesystem
-      folder — no global-scope adapter to build. Only its project-scope
-      target (`.cursor/rules/`) is real, so this is picked up once
-      project-scope resolution exists. The always-on `.agents/rules/`
-      fallback already covers the global case in the meantime.
-- [ ] Task 11: Windsurf adapter — **DEFERRED to after Task 22.** Windsurf's
-      global rules file (`~/.codeium/windsurf/memories/global_rules.md`) is
-      a single shared file, not a directory — doesn't fit the
-      per-child-symlink model. Only its project-scope target
-      (`.windsurf/rules/`) fits now; global support belongs with the
-      postinstall/`upsertBlock` mechanism (Phase 6) instead, revisited later.
+- [x] Task 10: Cursor adapter — project-scope only (`.cursor/rules/`).
+      Cursor's "User Rules" (global scope) are UI/database-managed, not a
+      filesystem folder — `globalRoot` is intentionally absent (made
+      optional on `GlobalSymlinkAdapter` for this reason); global installs
+      of a cursor-targeting plugin are cleanly skipped and reported, with
+      the always-on `.agents/rules/` fallback covering the global case.
+- [x] Task 11: Windsurf adapter — project-scope only (`.windsurf/rules/`).
+      Windsurf's global rules file
+      (`~/.codeium/windsurf/memories/global_rules.md`) is a single shared
+      file, not a directory — doesn't fit the per-child-symlink model, so
+      no `globalRoot` here either; global support would need the
+      postinstall/`upsertBlock` mechanism instead, not attempted in v1.
 
 ### Phase 5: Native-marketplace adapters
 - [x] Task 13: `marketplace-exec.ts` shared shell-out primitive

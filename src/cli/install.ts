@@ -171,6 +171,10 @@ export async function installPlugin(
         }
         rootDir = adapter.projectRoot(cwd);
       } else {
+        if (!adapter.globalRoot) {
+          skipped.push(`${agentId} (no global-scope target)`);
+          continue;
+        }
         if (adapter.detect && !(await adapter.detect(home))) {
           skipped.push(`${agentId} (not detected)`);
           continue;

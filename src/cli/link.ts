@@ -29,6 +29,15 @@ export class NoTargetForAgentError extends Error {
   }
 }
 
+export class NoGlobalScopeTargetError extends Error {
+  constructor(agentId: string) {
+    super(
+      `Agent "${agentId}" has no global-scope filesystem target — use "maui install --scope project" instead`
+    );
+    this.name = "NoGlobalScopeTargetError";
+  }
+}
+
 export interface LinkOptions {
   home?: string;
 }
@@ -55,12 +64,14 @@ export async function linkPlugin(
     throw new NoTargetForAgentError(name, agentId);
   }
 
+  if (!adapter.globalRoot) {
+    throw new NoGlobalScopeTargetError(agentId);
+  }
+  const globalRoot = adapter.globalRoot;
+
   const symlinks: string[] = [];
   for (const [sourceRel, destRel] of Object.entries(target as SymlinkTargetMap)) {
-    const result = await linkChildren(
-      join(pluginDir, sourceRel),
-      join(adapter.globalRoot(home), destRel)
-    );
+    const result = await linkChildren(join(pluginDir, sourceRel), join(globalRoot(home), destRel));
     symlinks.push(...result.linked);
   }
 
