@@ -36,11 +36,18 @@ per agent, does whichever of the two things is correct for that agent:
 
 - **Language/runtime**: TypeScript on **Bun**
 - **Package manager**: Bun (`bun install`, `bunx`)
-- **Distribution**: published to the npm registry (Bun packages install fine
-  via `bun install -g maui` or `npm install -g maui`); invocable as `bunx maui`
-  without a global install. A standalone compiled binary via
-  `bun build --compile` is a nice-to-have, not required for v1 (see Open
-  Questions).
+- **Distribution**: **Bun-only, deliberately.** maui requires Bun as the
+  runtime — the CLI entrypoint's shebang is `#!/usr/bin/env bun`, and
+  `core/` uses Bun-native APIs throughout (`Bun.file`, `Bun.write`,
+  `Bun.which`, `Bun.$`) rather than `node:fs`/`node:child_process`
+  equivalents, since that's what keeps adapters and postinstall scripts
+  simple. The package is still published to the npm registry (npm is just
+  a package index; Bun installs from it fine), but installing it via
+  `npm install -g maui` only fetches the files — running the resulting
+  `maui` command still requires Bun to be installed separately. Install
+  with `bun install -g maui`, or invoke without installing via `bunx maui`.
+  A standalone compiled binary via `bun build --compile` is a nice-to-have,
+  not required for v1 (see Open Questions).
 - **Test runner**: Bun's built-in test runner (`bun:test`) — no separate test
   framework dependency needed.
 - **CLI framework**: TBD in Plan phase (e.g. `commander` or hand-rolled with
