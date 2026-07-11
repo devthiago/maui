@@ -51,6 +51,16 @@ export interface Registry {
   plugins: Record<string, RegistryPluginEntry>;
 }
 
+export interface PostInstallContext {
+  agent: string;
+  scope: Scope;
+  scopeRoot: string;
+  contextFile: string;
+  pluginDir: string;
+  pluginName: string;
+  version: string;
+}
+
 export interface NativeMarketplaceIdentity {
   pluginName: string;
   repo: string;

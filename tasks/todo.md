@@ -546,7 +546,7 @@ is researched (SPEC.md Open Question #8).
 
 ---
 
-## Task 20: Postinstall/postremove execution + `upsertBlock` + consent
+## Task 20: Postinstall/postremove execution + `upsertBlock` + consent ✅ done
 
 **Description:** Implement `core/postinstall.ts`: run a plugin's
 `postinstall.ts`/`postremove.ts` (if declared) with the `PostInstallContext`
