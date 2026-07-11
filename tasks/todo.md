@@ -644,7 +644,7 @@ at the wrong scope) rather than guessing. Follow-up work, not blocking.
 
 ---
 
-## Task 23: `maui create <plugin-name>`
+## Task 23: `maui create <plugin-name>` ✅ done
 
 **Description:** Implement `core/scaffold.ts` and the `maui create` CLI
 command per SPEC.md's Plugin Scaffolding section: prompt for GitHub

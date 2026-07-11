@@ -124,4 +124,33 @@ describe("installPlugin multi-agent orchestration", () => {
       });
     });
   });
+
+  it("a failing detected agent doesn't block other agents from installing", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "maui-fake-claude-failing-"));
+    const scriptPath = join(dir, "claude");
+    await writeFile(scriptPath, '#!/bin/sh\necho "boom: repo not found" >&2\nexit 1\n');
+    await chmod(scriptPath, 0o755);
+
+    const originalPath = process.env.PATH;
+    process.env.PATH = `${dir}:${originalPath}`;
+    try {
+      await withTmpHome(async (home) => {
+        const source = await makeFixturePlugin("example-plugin");
+        try {
+          const result = await installPlugin(source, { home });
+
+          expect(result.agents.some((agent) => agent.agent === "_default")).toBe(true);
+          expect(
+            await Bun.file(join(home, ".agents", "skills", "example", "SKILL.md")).exists()
+          ).toBe(true);
+          expect(result.failed.some((entry) => entry.startsWith("claude-code"))).toBe(true);
+        } finally {
+          await rm(source, { recursive: true, force: true });
+        }
+      });
+    } finally {
+      process.env.PATH = originalPath;
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

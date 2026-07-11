@@ -30,6 +30,7 @@ export interface InstallResult {
   pluginName: string;
   agents: InstalledAgentEntry[];
   skipped: string[];
+  failed: string[];
 }
 
 function resolveNativeIdentity(
@@ -91,13 +92,15 @@ async function installFromProjectConfig(
 
   const agents: InstalledAgentEntry[] = [];
   const skipped: string[] = [];
+  const failed: string[] = [];
   for (const info of Object.values(projectConfig.plugins)) {
     const result = await installPlugin(info.source, { ...options, home, cwd, scope: "project" });
     agents.push(...result.agents);
     skipped.push(...result.skipped);
+    failed.push(...result.failed);
   }
 
-  return { pluginName: `${pluginCount} plugin(s) from project config`, agents, skipped };
+  return { pluginName: `${pluginCount} plugin(s) from project config`, agents, skipped, failed };
 }
 
 export async function installPlugin(
@@ -120,6 +123,7 @@ export async function installPlugin(
 
   const agents: InstalledAgentEntry[] = [];
   const skipped: string[] = [];
+  const failed: string[] = [];
 
   for (const [agentId, target] of Object.entries(manifest.targets)) {
     if (isNativeMarketplaceTarget(target)) {
@@ -138,24 +142,28 @@ export async function installPlugin(
         continue;
       }
 
-      const identity = resolveNativeIdentity(manifest, target, source);
-      await adapter.install(identity, { home, confirm: options.confirm });
-      const contextFiles = await runPostinstallForAgent(
-        manifest,
-        pluginDir,
-        agentId,
-        scope,
-        home,
-        cwd,
-        options.confirm
-      );
-      agents.push({
-        agent: agentId,
-        scope,
-        kind: "native-marketplace",
-        identity,
-        ...(contextFiles.length > 0 ? { contextFiles } : {}),
-      });
+      try {
+        const identity = resolveNativeIdentity(manifest, target, source);
+        await adapter.install(identity, { home, confirm: options.confirm });
+        const contextFiles = await runPostinstallForAgent(
+          manifest,
+          pluginDir,
+          agentId,
+          scope,
+          home,
+          cwd,
+          options.confirm
+        );
+        agents.push({
+          agent: agentId,
+          scope,
+          kind: "native-marketplace",
+          identity,
+          ...(contextFiles.length > 0 ? { contextFiles } : {}),
+        });
+      } catch (error) {
+        failed.push(`${agentId} (${(error as Error).message})`);
+      }
     } else {
       const adapter = getSymlinkAdapter(agentId);
       if (!adapter) {
@@ -182,28 +190,32 @@ export async function installPlugin(
         rootDir = adapter.globalRoot(home);
       }
 
-      const symlinks: string[] = [];
-      for (const [sourceRel, destRel] of Object.entries(target as SymlinkTargetMap)) {
-        const result = await linkChildren(join(pluginDir, sourceRel), join(rootDir, destRel));
-        symlinks.push(...result.linked);
+      try {
+        const symlinks: string[] = [];
+        for (const [sourceRel, destRel] of Object.entries(target as SymlinkTargetMap)) {
+          const result = await linkChildren(join(pluginDir, sourceRel), join(rootDir, destRel));
+          symlinks.push(...result.linked);
+        }
+        const contextFiles = await runPostinstallForAgent(
+          manifest,
+          pluginDir,
+          agentId,
+          scope,
+          home,
+          cwd,
+          options.confirm
+        );
+        agents.push({
+          agent: agentId,
+          scope,
+          kind: "symlink",
+          symlinks,
+          ...(scope === "project" ? { projectRoot: cwd } : {}),
+          ...(contextFiles.length > 0 ? { contextFiles } : {}),
+        });
+      } catch (error) {
+        failed.push(`${agentId} (${(error as Error).message})`);
       }
-      const contextFiles = await runPostinstallForAgent(
-        manifest,
-        pluginDir,
-        agentId,
-        scope,
-        home,
-        cwd,
-        options.confirm
-      );
-      agents.push({
-        agent: agentId,
-        scope,
-        kind: "symlink",
-        symlinks,
-        ...(scope === "project" ? { projectRoot: cwd } : {}),
-        ...(contextFiles.length > 0 ? { contextFiles } : {}),
-      });
     }
   }
 
@@ -228,5 +240,5 @@ export async function installPlugin(
     await recordProjectPlugin(manifest.name, source, cwd);
   }
 
-  return { pluginName: manifest.name, agents, skipped };
+  return { pluginName: manifest.name, agents, skipped, failed };
 }

@@ -5,6 +5,7 @@ import { listPlugins } from "./list";
 import { removePlugin } from "./remove";
 import { linkPlugin } from "./link";
 import { unlinkPlugin } from "./unlink";
+import { createPlugin } from "./create";
 
 export interface CliResult {
   code: number;
@@ -38,7 +39,10 @@ async function runInstall(args: string[]): Promise<CliResult> {
   try {
     const result = await installPlugin(source, { scope });
     const agentNames = result.agents.map((entry) => entry.agent).join(", ") || "no agents";
-    return { code: 0, stdout: `Installed ${result.pluginName} → ${agentNames}` };
+    const lines = [`Installed ${result.pluginName} → ${agentNames}`];
+    if (result.skipped.length > 0) lines.push(`Skipped: ${result.skipped.join(", ")}`);
+    if (result.failed.length > 0) lines.push(`Failed: ${result.failed.join(", ")}`);
+    return { code: result.failed.length > 0 ? 1 : 0, stdout: lines.join("\n") };
   } catch (error) {
     return { code: 1, stderr: `maui install: ${(error as Error).message}` };
   }
@@ -122,6 +126,20 @@ async function runUnlink(args: string[]): Promise<CliResult> {
   }
 }
 
+async function runCreate(args: string[]): Promise<CliResult> {
+  const pluginName = args.find((arg) => !arg.startsWith("--"));
+  if (!pluginName) {
+    return { code: 1, stderr: "maui create: missing <plugin-name> argument" };
+  }
+
+  try {
+    const targetDir = await createPlugin(pluginName);
+    return { code: 0, stdout: `Created ${targetDir}` };
+  } catch (error) {
+    return { code: 1, stderr: `maui create: ${(error as Error).message}` };
+  }
+}
+
 export async function run(argv: string[]): Promise<CliResult> {
   const [command, ...rest] = argv;
 
@@ -151,6 +169,10 @@ export async function run(argv: string[]): Promise<CliResult> {
 
   if (command === "unlink") {
     return runUnlink(rest);
+  }
+
+  if (command === "create") {
+    return runCreate(rest);
   }
 
   return { code: 1, stderr: `maui: "${command}" is not implemented yet` };

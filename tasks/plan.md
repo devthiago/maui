@@ -102,7 +102,7 @@ postinstall/postremove hooks.
       beyond this task's literal acceptance criteria)
 
 ### Phase 8: Scaffolding
-- [ ] Task 23: `maui create <plugin-name>`
+- [x] Task 23: `maui create <plugin-name>`
 
 ### Phase 9: Update
 - [ ] Task 24: `maui update`
