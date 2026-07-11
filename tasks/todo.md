@@ -574,7 +574,7 @@ content hash in the registry).
 
 ---
 
-## Task 21: Wire postinstall/postremove into install/remove flow
+## Task 21: Wire postinstall/postremove into install/remove flow ✅ done
 
 **Description:** Call `postinstall` once per successfully-installed
 agent+scope pairing at the end of `maui install` (for both symlink and

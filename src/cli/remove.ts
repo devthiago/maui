@@ -7,6 +7,7 @@ import { unlinkChildren } from "../core/linker";
 import { pluginsRoot } from "../core/fetch";
 import { PluginNotFoundError } from "../core/errors";
 import { getNativeMarketplaceAdapter } from "../adapters/registry";
+import { stripBlock } from "../core/postinstall";
 
 export { PluginNotFoundError };
 
@@ -53,6 +54,13 @@ export async function removePlugin(name: string, options: RemoveOptions = {}): P
       if (adapter) {
         await adapter.remove(agentEntry.identity, { home });
       }
+    }
+
+    // Auto-cleanup: strip this plugin's marker-delimited block from every
+    // contextFile a postinstall wrote to, whether or not a postremove
+    // script is declared.
+    for (const contextFile of agentEntry.contextFiles ?? []) {
+      await stripBlock(contextFile, name);
     }
   }
 

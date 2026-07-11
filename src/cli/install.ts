@@ -1,9 +1,11 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fetchPlugin } from "../core/fetch";
 import { readManifest } from "../core/manifest";
 import { linkChildren } from "../core/linker";
 import { readRegistry, writeRegistry } from "../core/registry";
+import { resolveContextFile } from "../core/context-file";
+import { runHook } from "../core/postinstall";
 import { getNativeMarketplaceAdapter, getSymlinkAdapter } from "../adapters/registry";
 import { isNativeMarketplaceTarget } from "../types";
 import type {
@@ -11,6 +13,7 @@ import type {
   NativeMarketplaceIdentity,
   NativeMarketplaceTarget,
   PluginManifest,
+  PostInstallContext,
   SymlinkTargetMap,
 } from "../types";
 
@@ -36,6 +39,35 @@ function resolveNativeIdentity(
     target.marketplaceName ?? repo.split("/").pop()?.replace(/\.git$/, "") ?? manifest.name;
 
   return { pluginName, repo, marketplaceName, package: target.package };
+}
+
+async function runPostinstallForAgent(
+  manifest: PluginManifest,
+  pluginDir: string,
+  agentId: string,
+  home: string,
+  confirm: InstallOptions["confirm"]
+): Promise<string[]> {
+  if (!manifest.postinstall) return [];
+
+  const contextFile = resolveContextFile(agentId, "global", { home });
+  const context: PostInstallContext = {
+    agent: agentId,
+    scope: "global",
+    scopeRoot: dirname(contextFile),
+    contextFile,
+    pluginDir,
+    pluginName: manifest.name,
+    version: manifest.version,
+  };
+
+  const { contextFilesWritten } = await runHook(
+    join(pluginDir, manifest.postinstall),
+    manifest.name,
+    context,
+    { home, confirm }
+  );
+  return contextFilesWritten;
 }
 
 export async function installPlugin(
@@ -64,7 +96,20 @@ export async function installPlugin(
 
       const identity = resolveNativeIdentity(manifest, target, source);
       await adapter.install(identity, { home, confirm: options.confirm });
-      agents.push({ agent: agentId, scope: "global", kind: "native-marketplace", identity });
+      const contextFiles = await runPostinstallForAgent(
+        manifest,
+        pluginDir,
+        agentId,
+        home,
+        options.confirm
+      );
+      agents.push({
+        agent: agentId,
+        scope: "global",
+        kind: "native-marketplace",
+        identity,
+        ...(contextFiles.length > 0 ? { contextFiles } : {}),
+      });
     } else {
       const adapter = getSymlinkAdapter(agentId);
       if (!adapter) {
@@ -84,7 +129,20 @@ export async function installPlugin(
         );
         symlinks.push(...result.linked);
       }
-      agents.push({ agent: agentId, scope: "global", kind: "symlink", symlinks });
+      const contextFiles = await runPostinstallForAgent(
+        manifest,
+        pluginDir,
+        agentId,
+        home,
+        options.confirm
+      );
+      agents.push({
+        agent: agentId,
+        scope: "global",
+        kind: "symlink",
+        symlinks,
+        ...(contextFiles.length > 0 ? { contextFiles } : {}),
+      });
     }
   }
 

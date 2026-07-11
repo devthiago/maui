@@ -93,7 +93,7 @@ postinstall/postremove hooks.
 ### Phase 6: Postinstall / Postremove hooks
 - [x] Task 19: Per-adapter `contextFile` resolution
 - [x] Task 20: Postinstall/postremove execution + `upsertBlock` + consent prompts
-- [ ] Task 21: Wire hooks into install/remove flow, registry tracking for auto-cleanup
+- [x] Task 21: Wire hooks into install/remove flow, registry tracking for auto-cleanup
 
 ### Phase 7: Project scope
 - [ ] Task 22: `--scope project` across install/link/unlink + `<project>/.maui/config.json`

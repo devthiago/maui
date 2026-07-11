@@ -97,7 +97,7 @@ export async function runHook(
   pluginName: string,
   context: PostInstallContext,
   options: RunHookOptions = {}
-): Promise<void> {
+): Promise<{ contextFilesWritten: string[] }> {
   const home = options.home ?? homedir();
   const scriptContent = await Bun.file(scriptPath).text();
   const consentKey = `postinstall:${pluginName}:${hashScript(scriptContent)}`;
@@ -119,9 +119,15 @@ export async function runHook(
     throw new Error(`${scriptPath} must have a default export function`);
   }
 
+  const contextFilesWritten: string[] = [];
   const api: PostInstallApi = {
-    upsertBlock: (filePath, content) => upsertBlock(filePath, pluginName, content),
+    upsertBlock: async (filePath, content) => {
+      await upsertBlock(filePath, pluginName, content);
+      contextFilesWritten.push(filePath);
+    },
   };
 
   await hook(context, api);
+
+  return { contextFilesWritten };
 }
