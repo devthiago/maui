@@ -9,4 +9,7 @@ export const genericAgentsAdapter = {
   globalRoot(home: string): string {
     return join(home, ".agents");
   },
+  projectRoot(cwd: string): string {
+    return join(cwd, ".agents");
+  },
 };

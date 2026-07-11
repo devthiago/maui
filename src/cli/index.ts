@@ -12,14 +12,31 @@ export interface CliResult {
   stderr?: string;
 }
 
+function parseInstallArgs(args: string[]): { source?: string; scope: "global" | "project" } {
+  let source: string | undefined;
+  let scope: "global" | "project" = "global";
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--scope") {
+      const value = args[++i];
+      if (value === "global" || value === "project") scope = value;
+    } else if (arg && !arg.startsWith("--") && !source) {
+      source = arg;
+    }
+  }
+
+  return { source, scope };
+}
+
 async function runInstall(args: string[]): Promise<CliResult> {
-  const source = args.find((arg) => !arg.startsWith("--"));
-  if (!source) {
+  const { source, scope } = parseInstallArgs(args);
+  if (!source && scope !== "project") {
     return { code: 1, stderr: "maui install: missing <source> argument" };
   }
 
   try {
-    const result = await installPlugin(source);
+    const result = await installPlugin(source, { scope });
     const agentNames = result.agents.map((entry) => entry.agent).join(", ") || "no agents";
     return { code: 0, stdout: `Installed ${result.pluginName} → ${agentNames}` };
   } catch (error) {

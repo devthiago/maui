@@ -37,6 +37,7 @@ export interface InstalledAgentEntry {
   symlinks?: string[];
   contextFiles?: string[];
   identity?: NativeMarketplaceIdentity;
+  projectRoot?: string;
 }
 
 export interface RegistryPluginEntry {

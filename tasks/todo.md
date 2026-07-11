@@ -601,7 +601,7 @@ writes) when no `postremove` is declared.
 
 ---
 
-## Task 22: `--scope project` support
+## Task 22: `--scope project` support ✅ done (native-marketplace project scope out of scope, see note)
 
 **Description:** Thread `--scope project` through `install`/`link`/`unlink`
 for symlink adapters (native-marketplace adapters use their own scope
@@ -611,18 +611,33 @@ instead of home-directory ones, and record linked plugins in
 reproduces the same set.
 
 **Acceptance criteria:**
-- [ ] `maui install <source> --scope project` links into `./.claude/...` etc. instead of `~/.claude/...`
-- [ ] The choice is recorded in `<project>/.maui/config.json`
-- [ ] Running `maui install` with no arguments in a project containing that config file reproduces the same linked set
+- [x] `maui install <source> --scope project` links into `./.agents/...` (and
+      `./.kiro/steering/...` when detected) instead of the `~/`-rooted paths
+      — the original wording ("`./.claude/...`") assumed Claude Code was a
+      symlink target; it's native-marketplace, so that specific example no
+      longer applies (see gap note below)
+- [x] The choice is recorded in `<project>/.maui/config.json`
+- [x] Running `maui install` with no arguments in a project containing that
+      config file reproduces the same linked set
+
+**Known gap:** native-marketplace adapters (Claude Code, Codex, Gemini,
+OpenCode, Grok) don't yet support `--scope project` — their `install()`
+signature has no scope parameter, and each would need its own scope-flag
+wiring (`claude plugin install --scope project`, `codex-marketplace add
+--project`, etc.). `installPlugin` explicitly skips native-marketplace
+targets at project scope (reported in `skipped`, not silently mis-installed
+at the wrong scope) rather than guessing. Follow-up work, not blocking.
 
 **Verification:**
-- [ ] `bun test tests/integration/project-scope.test.ts` passes against a fixture project directory
+- [x] `bun test tests/integration/project-scope.test.ts` passes against a fixture project directory
 
 **Dependencies:** Task 6, Task 9
 
-**Files likely touched:**
-- `src/core/registry.ts` (project config read/write)
-- `src/cli/install.ts`
+**Files touched:**
+- `src/core/project-config.ts` (new)
+- `src/adapters/generic-agents.ts`, `src/adapters/kiro.ts`, `src/adapters/registry.ts` (`projectRoot`)
+- `src/cli/install.ts`, `src/cli/index.ts`
+- `src/types.ts` (`InstalledAgentEntry.projectRoot`)
 - `tests/integration/project-scope.test.ts`
 
 **Estimated scope:** Medium

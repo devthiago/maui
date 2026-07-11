@@ -6,6 +6,7 @@ import { linkChildren } from "../core/linker";
 import { readRegistry, writeRegistry } from "../core/registry";
 import { resolveContextFile } from "../core/context-file";
 import { runHook } from "../core/postinstall";
+import { readProjectConfig, recordProjectPlugin } from "../core/project-config";
 import { getNativeMarketplaceAdapter, getSymlinkAdapter } from "../adapters/registry";
 import { isNativeMarketplaceTarget } from "../types";
 import type {
@@ -14,11 +15,14 @@ import type {
   NativeMarketplaceTarget,
   PluginManifest,
   PostInstallContext,
+  Scope,
   SymlinkTargetMap,
 } from "../types";
 
 export interface InstallOptions {
   home?: string;
+  cwd?: string;
+  scope?: Scope;
   confirm?: (message: string) => Promise<boolean>;
 }
 
@@ -45,15 +49,17 @@ async function runPostinstallForAgent(
   manifest: PluginManifest,
   pluginDir: string,
   agentId: string,
+  scope: Scope,
   home: string,
+  cwd: string,
   confirm: InstallOptions["confirm"]
 ): Promise<string[]> {
   if (!manifest.postinstall) return [];
 
-  const contextFile = resolveContextFile(agentId, "global", { home });
+  const contextFile = resolveContextFile(agentId, scope, { home, projectRoot: cwd });
   const context: PostInstallContext = {
     agent: agentId,
-    scope: "global",
+    scope,
     scopeRoot: dirname(contextFile),
     contextFile,
     pluginDir,
@@ -70,11 +76,44 @@ async function runPostinstallForAgent(
   return contextFilesWritten;
 }
 
+async function installFromProjectConfig(
+  home: string,
+  cwd: string,
+  options: InstallOptions
+): Promise<InstallResult> {
+  const projectConfig = await readProjectConfig(cwd);
+  const pluginCount = projectConfig ? Object.keys(projectConfig.plugins).length : 0;
+  if (!projectConfig || pluginCount === 0) {
+    throw new Error(
+      `No <source> given and no plugins recorded in ${join(cwd, ".maui", "config.json")} to reproduce`
+    );
+  }
+
+  const agents: InstalledAgentEntry[] = [];
+  const skipped: string[] = [];
+  for (const info of Object.values(projectConfig.plugins)) {
+    const result = await installPlugin(info.source, { ...options, home, cwd, scope: "project" });
+    agents.push(...result.agents);
+    skipped.push(...result.skipped);
+  }
+
+  return { pluginName: `${pluginCount} plugin(s) from project config`, agents, skipped };
+}
+
 export async function installPlugin(
-  source: string,
+  source: string | undefined,
   options: InstallOptions = {}
 ): Promise<InstallResult> {
   const home = options.home ?? homedir();
+  const cwd = options.cwd ?? process.cwd();
+  const scope: Scope = options.scope ?? "global";
+
+  if (!source) {
+    if (scope !== "project") {
+      throw new Error("maui install: missing <source> argument");
+    }
+    return installFromProjectConfig(home, cwd, options);
+  }
 
   const pluginDir = await fetchPlugin(source, home);
   const manifest = await readManifest(pluginDir);
@@ -84,6 +123,11 @@ export async function installPlugin(
 
   for (const [agentId, target] of Object.entries(manifest.targets)) {
     if (isNativeMarketplaceTarget(target)) {
+      if (scope === "project") {
+        skipped.push(`${agentId} (project-scope native-marketplace install not yet supported)`);
+        continue;
+      }
+
       const adapter = getNativeMarketplaceAdapter(agentId);
       if (!adapter) {
         skipped.push(`${agentId} (no adapter registered)`);
@@ -100,12 +144,14 @@ export async function installPlugin(
         manifest,
         pluginDir,
         agentId,
+        scope,
         home,
+        cwd,
         options.confirm
       );
       agents.push({
         agent: agentId,
-        scope: "global",
+        scope,
         kind: "native-marketplace",
         identity,
         ...(contextFiles.length > 0 ? { contextFiles } : {}),
@@ -116,45 +162,67 @@ export async function installPlugin(
         skipped.push(`${agentId} (no adapter registered)`);
         continue;
       }
-      if (adapter.detect && !(await adapter.detect(home))) {
-        skipped.push(`${agentId} (not detected)`);
-        continue;
+
+      let rootDir: string;
+      if (scope === "project") {
+        if (!adapter.projectRoot) {
+          skipped.push(`${agentId} (no project-scope target)`);
+          continue;
+        }
+        rootDir = adapter.projectRoot(cwd);
+      } else {
+        if (adapter.detect && !(await adapter.detect(home))) {
+          skipped.push(`${agentId} (not detected)`);
+          continue;
+        }
+        rootDir = adapter.globalRoot(home);
       }
 
       const symlinks: string[] = [];
       for (const [sourceRel, destRel] of Object.entries(target as SymlinkTargetMap)) {
-        const result = await linkChildren(
-          join(pluginDir, sourceRel),
-          join(adapter.globalRoot(home), destRel)
-        );
+        const result = await linkChildren(join(pluginDir, sourceRel), join(rootDir, destRel));
         symlinks.push(...result.linked);
       }
       const contextFiles = await runPostinstallForAgent(
         manifest,
         pluginDir,
         agentId,
+        scope,
         home,
+        cwd,
         options.confirm
       );
       agents.push({
         agent: agentId,
-        scope: "global",
+        scope,
         kind: "symlink",
         symlinks,
+        ...(scope === "project" ? { projectRoot: cwd } : {}),
         ...(contextFiles.length > 0 ? { contextFiles } : {}),
       });
     }
   }
 
   const registry = await readRegistry(home);
+  const existing = registry.plugins[manifest.name];
+  const previousAgents = existing?.agents ?? [];
+  const touchedKeys = new Set(agents.map((a) => `${a.agent}:${a.scope}:${a.projectRoot ?? ""}`));
+  const keptAgents = previousAgents.filter(
+    (a) => !touchedKeys.has(`${a.agent}:${a.scope}:${a.projectRoot ?? ""}`)
+  );
+
   registry.plugins[manifest.name] = {
     name: manifest.name,
     source,
     version: manifest.version,
-    installedAt: new Date().toISOString(),
-    agents,
+    installedAt: existing?.installedAt ?? new Date().toISOString(),
+    agents: [...keptAgents, ...agents],
   };
   await writeRegistry(registry, home);
+
+  if (scope === "project") {
+    await recordProjectPlugin(manifest.name, source, cwd);
+  }
 
   return { pluginName: manifest.name, agents, skipped };
 }

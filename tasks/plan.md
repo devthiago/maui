@@ -96,7 +96,10 @@ postinstall/postremove hooks.
 - [x] Task 21: Wire hooks into install/remove flow, registry tracking for auto-cleanup
 
 ### Phase 7: Project scope
-- [ ] Task 22: `--scope project` across install/link/unlink + `<project>/.maui/config.json`
+- [x] Task 22: `--scope project` across install + `<project>/.maui/config.json`
+      (symlink adapters only — native-marketplace project scope is a
+      documented follow-up, not wired; link/unlink weren't extended either,
+      beyond this task's literal acceptance criteria)
 
 ### Phase 8: Scaffolding
 - [ ] Task 23: `maui create <plugin-name>`

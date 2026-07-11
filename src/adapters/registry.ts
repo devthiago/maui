@@ -12,6 +12,8 @@ export interface GlobalSymlinkAdapter {
   globalRoot(home: string): string;
   /** Omitted => always considered present (the always-on .agents fallback). */
   detect?(home: string): Promise<boolean>;
+  /** Omitted => this adapter has no project-scope target; project installs skip it. */
+  projectRoot?(cwd: string): string;
 }
 
 const SYMLINK_ADAPTERS: Record<string, GlobalSymlinkAdapter> = {

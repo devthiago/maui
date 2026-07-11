@@ -22,6 +22,9 @@ export const kiroAdapter = {
   globalRoot(home: string): string {
     return home;
   },
+  projectRoot(cwd: string): string {
+    return cwd;
+  },
   async detect(home: string): Promise<boolean> {
     return pathExists(join(home, ".kiro"));
   },
