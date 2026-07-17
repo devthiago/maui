@@ -73,7 +73,9 @@ maui update [<plugin-name>]
 maui remove <plugin-name> [--agent <agent-name>...] [--purge]
 maui link <plugin-name> --agent <agent-name> [--scope global|project]
 maui unlink <plugin-name> --agent <agent-name> [--scope global|project]
-maui create <plugin-name>
+maui create <name>
+maui create-plugin <plugin-name>
+maui create-marketplace <marketplace-name>
 maui help
 ```
 
@@ -84,8 +86,8 @@ maui help
   instead of the user's home directory. Only meaningful for symlink-adapter
   agents — native-marketplace agents use their own scope flags (see below).
 - `--purge` on `remove` also deletes the cached copy under `~/.maui/plugins/`.
-- `maui create <plugin-name>` scaffolds a new publishable plugin repo (see
-  **Plugin Scaffolding** below).
+- `maui create`/`create-plugin`/`create-marketplace` scaffold a new
+  publishable plugin or marketplace repo (see **Plugin Scaffolding** below).
 
 ## Agent Adapter Strategies
 
@@ -245,7 +247,7 @@ src/
     marketplace-exec.ts     → shells out to native CLIs (claude/codex-marketplace/gemini) and parses their output/exit codes
     context-file.ts           → resolves the per-adapter `contextFile` path (CLAUDE.md, GEMINI.md, AGENTS.md fallback, ...)
     postinstall.ts              → runs a plugin's postinstall/postremove script, provides the `upsertBlock` helper, tracks written blocks for auto-cleanup
-    scaffold.ts                   → implements `maui create`
+    scaffold.ts                   → implements `create`/`create-plugin`/`create-marketplace`
   adapters/
     claude-code.ts       → native-marketplace adapter
     codex.ts               → native-marketplace adapter
@@ -417,52 +419,116 @@ means informed consent, not containment:
   content changed, maui re-prompts — a changed script is a new trust
   decision, not a continuation of the old one.
 
-## Plugin Scaffolding (`maui create`)
+## Plugin Scaffolding (`maui create`, `maui create-plugin`, `maui create-marketplace`)
 
-`maui create <plugin-name>` bootstraps a new repo ready to publish to GitHub
-and install via `maui install` (or natively, for marketplace agents).
+Three commands, because a repo can either *be* one plugin, or *host* many.
+Trying to force both shapes through one command is what made adding a
+second plugin to an existing repo a manual, error-prone exercise before —
+these all reference the real-world shape confirmed against
+[wshobson/agents](https://github.com/wshobson/agents), a working multi-harness
+plugin marketplace repo, rather than an invented layout.
 
-1. Prompts for: GitHub username/org, plugin name (defaults to the argument),
-   short description, license (optional).
-2. Creates `<plugin-name>/` with the common shared source folders, each
-   containing a `.gitkeep` so empty folders still commit to git:
-   ```
-   agents/.gitkeep
-   commands/.gitkeep
-   hooks/.gitkeep
-   personas/.gitkeep
-   prompts/.gitkeep
-   rules/.gitkeep
-   skills/.gitkeep
-   subagents/.gitkeep
-   ```
-3. Generates each native-marketplace agent's own manifest, pre-filled from
-   the prompt answers and pointed at the shared folders above:
-   - `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`
-     (self-hosted single-plugin marketplace, see Native-marketplace
-     adapters above)
-   - `.codex-plugin/plugin.json`
-   - `gemini-extension.json`
-4. Generates `maui.json` with `targets` pre-wired: `marketplace: true` for
-   claude-code/codex/gemini, and source→container mappings pointing at the
-   same shared `skills/`, `rules/`, etc. folders for every symlink agent.
-5. Generates a `package.json` (Bun-compatible) with scripts, notably a
-   version-bump command that updates `version` in `package.json` *and* every
-   generated agent manifest (`.claude-plugin/plugin.json`,
-   `.codex-plugin/plugin.json`, `gemini-extension.json`, `maui.json`) in one
-   step, so all agents stay in sync on one release number:
-   ```json
-   {
-     "name": "<plugin-name>",
-     "version": "0.1.0",
-     "scripts": {
-       "version:bump": "bun run scripts/bump-version.ts"
-     }
-   }
-   ```
-6. Initializes a git repo (`git init`) but does **not** push or create the
-   GitHub remote — that step needs the user's explicit go-ahead per the
-   destructive/shared-state rules in the top-level operating principles.
+**Shared design point**: everything generated here is meant to work with
+each agent's own *native* install command with maui never in the loop
+(`claude plugin marketplace add`, `gemini extensions install`, etc.) — not
+just as input to `maui install`. Single-plugin repos are the exception:
+those still generate `maui.json` too, since a lone plugin repo is small
+enough that both paths make sense to support at once.
+
+### `maui create-plugin <plugin-name>` — scaffolds one plugin
+
+Detects context by checking for `./.claude-plugin/marketplace.json` in the
+current working directory:
+
+**Not found → standalone mode** (identical to the single-plugin scaffold
+this project already had): prompts for GitHub username/org, description,
+license; creates `<plugin-name>/` with the common shared source folders
+(`skills/`, `agents/`, `commands/`, `rules/`, `prompts/`, `hooks/`, each with
+a `.gitkeep`); generates `.claude-plugin/plugin.json` +
+`.claude-plugin/marketplace.json` (self-hosted single-plugin marketplace,
+now including an `owner: { name: <githubUser> }` field, confirmed present in
+real marketplace.json files) + `.codex-plugin/plugin.json` +
+`gemini-extension.json` + `maui.json` (targets pre-wired: `marketplace: true`
+for claude-code/codex/gemini, symlink mappings for cursor/windsurf/kiro/
+`_default`) + `package.json` with a `version:bump` script that updates
+`version` across all five files in one step. `git init`, no remote, no push.
+
+**Found → marketplace mode**: creates `plugins/<plugin-name>/` inside the
+existing repo, containing only `.claude-plugin/plugin.json`,
+`.codex-plugin/plugin.json`, and the common source folders — **no**
+`marketplace.json`, `gemini-extension.json`, or `maui.json` in the plugin
+folder itself, since those are repo-level and already exist (this is the
+literal fix for "adding another plugin forces manual effort"). It then:
+
+- **Appends** an entry to the existing root `.claude-plugin/marketplace.json`'s
+  `plugins` array: `{ name, source: "./plugins/<name>", description,
+  version, author }`.
+- **Appends** a matching entry to `.agents/plugins/marketplace.json`'s
+  `plugins` array, if that file exists (see `create-marketplace` below).
+- Generates its own `package.json` + `scripts/bump-version.ts`, scoped to
+  just this plugin: bumps `package.json`, `.claude-plugin/plugin.json`, and
+  `.codex-plugin/plugin.json` — **and** updates this plugin's own entry
+  (matched by `name`) inside the shared root `.claude-plugin/marketplace.json`
+  and `.agents/plugins/marketplace.json`, so the marketplace catalog's
+  per-plugin version never drifts from the plugin's own manifest. Does not
+  touch the marketplace's own `metadata.version` — that's
+  `create-marketplace`'s script's job, since the marketplace and each
+  plugin it lists are independently versioned (confirmed in the reference
+  repo: marketplace-level `1.7.1` vs. one plugin at `1.2.3`).
+
+### `maui create-marketplace <marketplace-name>` — scaffolds the repo shell
+
+Prompts for GitHub username/org, description, license. Creates
+`<marketplace-name>/` with:
+
+```
+<marketplace-name>/
+├── .git/                          git init, no remote, no commits
+├── .claude-plugin/
+│   └── marketplace.json            { name, owner: { name: githubUser }, metadata: { description, version: "0.1.0" }, plugins: [] }
+├── .agents/
+│   └── plugins/
+│       └── marketplace.json         { name, plugins: [] } — see note below
+├── gemini-extension.json           { name, version: "0.1.0", description, contextFileName: "AGENTS.md" }
+├── plugins/
+│   └── .gitkeep                    populated later by create-plugin
+├── package.json
+└── scripts/
+    └── bump-version.ts              bumps package.json, .claude-plugin/marketplace.json's metadata.version,
+                                       gemini-extension.json's version, and .agents/plugins/marketplace.json's
+                                       version if that key is present (it isn't guaranteed to be — see note)
+```
+
+**Why `gemini-extension.json` lives here, not per-plugin**: confirmed
+against the reference repo — Gemini has no marketplace/per-plugin install
+concept, so `gemini extensions install <repo-url>` installs the *entire*
+repo as one extension. A per-plugin `gemini-extension.json` would have
+nothing that could install it independently, so it belongs at the
+marketplace level, generated once.
+
+**`.agents/plugins/marketplace.json` note**: this file is a second,
+`.agents`-convention manifest also found in the reference repo, nested
+inside the `.agents/` folder maui already treats as the always-on symlink
+fallback — not a new sibling dot-folder. Its schema differs from
+`.claude-plugin/marketplace.json`: object-form
+`"source": { "source": "local", "path": "./plugins/<name>" }` instead of a
+plain string, plus `policy.installation`/`policy.authentication` and
+`category` fields on each entry. Those extra fields are **not confirmed as
+an official standard** — only observed in this one real-world repo — so
+maui's generator treats `name`/`plugins`/`source` as the only required
+shape and leaves `policy`/`category` out unless later confirmed elsewhere.
+
+### `maui create <name>`
+
+Thin dispatcher, not a third independent implementation:
+
+1. Prompts: "Is this a single-plugin repo or a multi-plugin marketplace repo?"
+2. **Single** → calls `create-plugin <name>` in standalone mode (identical
+   result to running `create-plugin` directly in an empty directory).
+3. **Multi** → calls `create-marketplace <name>`. Does **not** also create a
+   first plugin automatically — the user runs `create-plugin` afterward
+   (from inside the new directory) to add one, which is then detected in
+   marketplace mode per above.
 
 ## Code Style
 
@@ -620,9 +686,17 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
   records the choice in `<project>/.maui/config.json`, committable so
   teammates get the same setup via `maui install` (no args) reading that
   file.
-- `maui create my-plugin` produces a repo that, once pushed to GitHub, can be
-  installed via `claude plugin marketplace add <user>/my-plugin` +
-  `claude plugin install my-plugin@my-plugin` with no further manual editing.
+- `maui create-plugin my-plugin` produces a repo that, once pushed to
+  GitHub, can be installed via `claude plugin marketplace add
+  <user>/my-plugin` + `claude plugin install my-plugin@my-plugin` with no
+  further manual editing.
+- `maui create-marketplace my-marketplace` followed by two separate
+  `maui create-plugin` runs from inside that directory produces a repo where
+  both plugins are independently installable via
+  `claude plugin install <plugin-name>@my-marketplace` — with **zero**
+  manual edits to `.claude-plugin/marketplace.json` required to add the
+  second plugin, which is the entire point of splitting `create` into three
+  commands.
 - A plugin with a `postinstall.ts` that calls
   `upsertBlock(ctx.contextFile, "...")` results in that block landing in
   `~/.claude/CLAUDE.md` when installed for Claude Code, `~/.gemini/GEMINI.md`
@@ -652,7 +726,7 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
     @scope/name`), not from git — meaning a maui plugin author must
     separately publish to npm for the OpenCode adapter to work at all. This
     is a real distribution gap worth surfacing to plugin authors (e.g. in
-    `maui create`'s generated README/docs) rather than silently failing.
+    `create-plugin`'s generated README/docs) rather than silently failing.
 2c. Grok CLI's `grok plugin marketplace add|remove` and
     `grok plugin install|uninstall` are confirmed to exist
     (docs.x.ai/build/cli/reference), but the reference page doesn't spell
