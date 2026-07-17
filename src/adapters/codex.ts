@@ -1,26 +1,16 @@
-import { createInterface } from "node:readline/promises";
 import { homedir } from "node:os";
 import { resolveBinary, runNativeCommand } from "../core/marketplace-exec";
 import { hasConsented, recordConsent } from "../core/config";
+import { confirm as confirmLine } from "../core/prompt";
 import type { NativeAdapterRuntimeOptions, NativeMarketplaceAdapter } from "../types";
 
 const CONSENT_KEY = "codex-marketplace";
-
-async function defaultConfirm(message: string): Promise<boolean> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const answer = await rl.question(`${message} [y/N] `);
-    return /^y(es)?$/i.test(answer.trim());
-  } finally {
-    rl.close();
-  }
-}
 
 async function ensureConsent(options: NativeAdapterRuntimeOptions): Promise<void> {
   const home = options.home ?? homedir();
   if (await hasConsented(CONSENT_KEY, home)) return;
 
-  const confirm = options.confirm ?? defaultConfirm;
+  const confirm = options.confirm ?? confirmLine;
   const confirmed = await confirm(
     'maui uses the third-party "codex-marketplace" tool (npx codex-marketplace) to manage Codex CLI plugins — this is not an OpenAI-official CLI. Allow maui to invoke it?'
   );

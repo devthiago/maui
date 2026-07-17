@@ -1,9 +1,9 @@
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { createHash } from "node:crypto";
-import { createInterface } from "node:readline/promises";
 import { homedir } from "node:os";
 import { hasConsented, recordConsent } from "./config";
+import { confirm as confirmLine } from "./prompt";
 import type { PostInstallContext } from "../types";
 
 export interface PostInstallApi {
@@ -70,16 +70,6 @@ function hashScript(content: string): string {
   return createHash("sha256").update(content).digest("hex");
 }
 
-async function defaultConfirm(message: string): Promise<boolean> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const answer = await rl.question(`${message} [y/N] `);
-    return /^y(es)?$/i.test(answer.trim());
-  } finally {
-    rl.close();
-  }
-}
-
 export interface RunHookOptions {
   home?: string;
   confirm?: (message: string) => Promise<boolean>;
@@ -103,7 +93,7 @@ export async function runHook(
   const consentKey = `postinstall:${pluginName}:${hashScript(scriptContent)}`;
 
   if (!(await hasConsented(consentKey, home))) {
-    const confirm = options.confirm ?? defaultConfirm;
+    const confirm = options.confirm ?? confirmLine;
     const confirmed = await confirm(
       `Plugin "${pluginName}" declares a postinstall/postremove script (${scriptPath}). Allow maui to run it?`
     );

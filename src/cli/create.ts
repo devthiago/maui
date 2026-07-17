@@ -1,4 +1,4 @@
-import { createInterface } from "node:readline/promises";
+import { prompt as promptLine } from "../core/prompt";
 import { scaffoldMarketplace, scaffoldPlugin } from "../core/scaffold";
 
 export interface CreateOptions {
@@ -7,17 +7,8 @@ export interface CreateOptions {
   cwd?: string;
 }
 
-async function defaultPrompt(question: string): Promise<string> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    return await rl.question(question);
-  } finally {
-    rl.close();
-  }
-}
-
 export async function createPlugin(pluginNameArg: string, options: CreateOptions = {}): Promise<string> {
-  const prompt = options.prompt ?? defaultPrompt;
+  const prompt = options.prompt ?? promptLine;
 
   const pluginName = (await prompt(`Plugin name [${pluginNameArg}]: `)).trim() || pluginNameArg;
   const githubUser = (await prompt("GitHub username/org: ")).trim();
@@ -38,7 +29,7 @@ export async function createMarketplace(
   marketplaceNameArg: string,
   options: CreateOptions = {}
 ): Promise<string> {
-  const prompt = options.prompt ?? defaultPrompt;
+  const prompt = options.prompt ?? promptLine;
 
   const marketplaceName = (await prompt(`Marketplace name [${marketplaceNameArg}]: `)).trim() || marketplaceNameArg;
   const githubUser = (await prompt("GitHub username/org: ")).trim();
@@ -60,7 +51,7 @@ export async function createMarketplace(
  * delegates entirely to createPlugin (standalone mode) or createMarketplace.
  */
 export async function create(nameArg: string, options: CreateOptions = {}): Promise<string> {
-  const prompt = options.prompt ?? defaultPrompt;
+  const prompt = options.prompt ?? promptLine;
 
   const answer = (
     await prompt("Is this a single-plugin repo or a multi-plugin marketplace repo? [single/multi]: ")

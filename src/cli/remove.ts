@@ -1,13 +1,13 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { rm } from "node:fs/promises";
-import { createInterface } from "node:readline/promises";
 import { readRegistry, writeRegistry } from "../core/registry";
 import { unlinkChildren } from "../core/linker";
 import { pluginsRoot } from "../core/fetch";
 import { PluginNotFoundError } from "../core/errors";
 import { getNativeMarketplaceAdapter } from "../adapters/registry";
 import { stripBlock } from "../core/postinstall";
+import { confirm as confirmLine } from "../core/prompt";
 
 export { PluginNotFoundError };
 
@@ -18,16 +18,8 @@ export interface RemoveOptions {
   confirmPurge?: (name: string) => Promise<boolean>;
 }
 
-async function defaultConfirmPurge(name: string): Promise<boolean> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const answer = await rl.question(
-      `Plugin "${name}" is still linked to other agents. Purge its cached source anyway? [y/N] `
-    );
-    return /^y(es)?$/i.test(answer.trim());
-  } finally {
-    rl.close();
-  }
+function defaultConfirmPurge(name: string): Promise<boolean> {
+  return confirmLine(`Plugin "${name}" is still linked to other agents. Purge its cached source anyway?`);
 }
 
 export async function removePlugin(name: string, options: RemoveOptions = {}): Promise<void> {

@@ -818,7 +818,7 @@ no third scaffolding implementation.
 
 ---
 
-## Task 28: End-to-end verification against SPEC.md's two-plugin success criterion
+## Task 28: End-to-end verification against SPEC.md's two-plugin success criterion ✅ done (found and fixed a real readline bug)
 
 **Description:** Not a new unit — a manual verification pass proving the
 literal SPEC.md Success Criterion: `create-marketplace` a repo, run
@@ -835,8 +835,31 @@ during Task 23 — worth doing for real, not just trusting the unit tests.
 
 **Verification:** manual, via Bash — no new automated test expected, though any bug found gets a regression test added to Task 26's suite before this is marked done.
 
+**What actually happened:** the two-plugin marketplace scaffolding itself
+worked correctly on the first try — both plugins independently listed in
+both marketplace manifests, correct `source` paths, no duplication, correct
+per-plugin folder contents, no marketplace.json/gemini-extension.json/
+maui.json leaking into plugin folders. But driving it through the *real*
+CLI with real piped stdin (not injected test doubles) surfaced an
+unrelated, pre-existing bug: `node:readline/promises`' `question()` method
+silently drops buffered input between sequential calls when stdin is piped
+rather than a real TTY — confirmed hanging forever on the *second* question
+of any multi-question prompt flow, under both Bun and real Node. This
+affected all four places in the codebase using that pattern (`create.ts`,
+`remove.ts`, `codex.ts`, `postinstall.ts`), none of which any existing unit
+test could catch, since every test injects a fake `prompt`/`confirm`
+function and never exercises the real default. Fixed by replacing all four
+with a shared `core/prompt.ts` built directly on the `'line'` event instead
+(confirmed correct for both piped-all-at-once and genuinely interactive
+input), with a real subprocess-based regression test
+(`tests/integration/prompt.test.ts`) that would have caught this — exactly
+what manual end-to-end verification is for.
+
 **Dependencies:** Task 27
 
-**Files likely touched:** none (verification only, unless it surfaces a bug)
+**Files touched:**
+- `src/core/prompt.ts` (new)
+- `src/cli/create.ts`, `src/cli/remove.ts`, `src/adapters/codex.ts`, `src/core/postinstall.ts`
+- `tests/integration/prompt.test.ts` (new)
 
 **Estimated scope:** Small

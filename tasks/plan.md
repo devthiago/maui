@@ -129,17 +129,20 @@ manifest).
 - [x] Task 25: `scaffoldMarketplace()` — repo-shell scaffold
 - [x] Task 26: `create-plugin` marketplace-mode detection + append-to-existing-manifests
 - [x] Task 27: CLI wiring — `create-plugin`, `create-marketplace` subcommands, `create` becomes a dispatcher
-- [ ] Task 28: End-to-end verification against SPEC.md's two-plugin success criterion
+- [x] Task 28: End-to-end verification against SPEC.md's two-plugin success criterion
+      — found and fixed a real `node:readline/promises` bug along the way
+      (see tasks/todo.md's Task 28 entry); the scaffolding logic itself was
+      correct on the first try
 
 ### Checkpoint: Phase 10
-- [ ] A fresh `create-marketplace` repo's `.claude-plugin/marketplace.json`
+- [x] A fresh `create-marketplace` repo's `.claude-plugin/marketplace.json`
       has an empty `plugins` array and an `owner` field
-- [ ] Running `create-plugin` twice from inside that repo produces two
+- [x] Running `create-plugin` twice from inside that repo produces two
       entries in both `.claude-plugin/marketplace.json` and
       `.agents/plugins/marketplace.json`, with zero manual edits
-- [ ] Running `create-plugin` in an empty directory (no marketplace present)
+- [x] Running `create-plugin` in an empty directory (no marketplace present)
       still produces the original, unchanged single-plugin scaffold
-- [ ] `bun test` and `bun build` clean
+- [x] `bun test` and `bun build` clean (117 tests passing)
 
 ## Risks and Mitigations
 
