@@ -6,7 +6,9 @@ export const COMMANDS = [
   "remove <plugin-name> [--agent <agent-name>...] [--purge]",
   "link <plugin-name> --agent <agent-name> [--scope global|project]",
   "unlink <plugin-name> --agent <agent-name> [--scope global|project]",
-  "create <plugin-name>",
+  "create <name>",
+  "create-plugin <plugin-name>",
+  "create-marketplace <marketplace-name>",
   "help",
 ];
 

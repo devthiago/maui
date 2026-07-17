@@ -784,7 +784,7 @@ files — never touches the marketplace's own `metadata.version`.
 
 ---
 
-## Task 27: CLI wiring — `create-plugin`, `create-marketplace`, `create` dispatcher
+## Task 27: CLI wiring — `create-plugin`, `create-marketplace`, `create` dispatcher ✅ done
 
 **Description:** Rename the CLI's `create` subcommand handling so
 `create-plugin <plugin-name>` and `create-marketplace <marketplace-name>`

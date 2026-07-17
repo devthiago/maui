@@ -5,7 +5,7 @@ import { listPlugins } from "./list";
 import { removePlugin } from "./remove";
 import { linkPlugin } from "./link";
 import { unlinkPlugin } from "./unlink";
-import { createPlugin } from "./create";
+import { create, createMarketplace, createPlugin } from "./create";
 import { updatePlugin } from "./update";
 import { readRegistry } from "../core/registry";
 
@@ -129,16 +129,44 @@ async function runUnlink(args: string[]): Promise<CliResult> {
 }
 
 async function runCreate(args: string[]): Promise<CliResult> {
+  const name = args.find((arg) => !arg.startsWith("--"));
+  if (!name) {
+    return { code: 1, stderr: "maui create: missing <name> argument" };
+  }
+
+  try {
+    const targetDir = await create(name);
+    return { code: 0, stdout: `Created ${targetDir}` };
+  } catch (error) {
+    return { code: 1, stderr: `maui create: ${(error as Error).message}` };
+  }
+}
+
+async function runCreatePlugin(args: string[]): Promise<CliResult> {
   const pluginName = args.find((arg) => !arg.startsWith("--"));
   if (!pluginName) {
-    return { code: 1, stderr: "maui create: missing <plugin-name> argument" };
+    return { code: 1, stderr: "maui create-plugin: missing <plugin-name> argument" };
   }
 
   try {
     const targetDir = await createPlugin(pluginName);
     return { code: 0, stdout: `Created ${targetDir}` };
   } catch (error) {
-    return { code: 1, stderr: `maui create: ${(error as Error).message}` };
+    return { code: 1, stderr: `maui create-plugin: ${(error as Error).message}` };
+  }
+}
+
+async function runCreateMarketplace(args: string[]): Promise<CliResult> {
+  const marketplaceName = args.find((arg) => !arg.startsWith("--"));
+  if (!marketplaceName) {
+    return { code: 1, stderr: "maui create-marketplace: missing <marketplace-name> argument" };
+  }
+
+  try {
+    const targetDir = await createMarketplace(marketplaceName);
+    return { code: 0, stdout: `Created ${targetDir}` };
+  } catch (error) {
+    return { code: 1, stderr: `maui create-marketplace: ${(error as Error).message}` };
   }
 }
 
@@ -199,6 +227,14 @@ export async function run(argv: string[]): Promise<CliResult> {
 
   if (command === "create") {
     return runCreate(rest);
+  }
+
+  if (command === "create-plugin") {
+    return runCreatePlugin(rest);
+  }
+
+  if (command === "create-marketplace") {
+    return runCreateMarketplace(rest);
   }
 
   if (command === "update") {
