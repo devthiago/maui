@@ -15,31 +15,39 @@ export interface CliResult {
   stderr?: string;
 }
 
-function parseInstallArgs(args: string[]): { source?: string; scope: "global" | "project" } {
+function parseInstallArgs(args: string[]): {
+  source?: string;
+  scope: "global" | "project";
+  agents?: string[];
+} {
   let source: string | undefined;
   let scope: "global" | "project" = "global";
+  const agents: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--scope") {
       const value = args[++i];
       if (value === "global" || value === "project") scope = value;
+    } else if (arg === "--agent") {
+      const value = args[++i];
+      if (value) agents.push(value);
     } else if (arg && !arg.startsWith("--") && !source) {
       source = arg;
     }
   }
 
-  return { source, scope };
+  return { source, scope, agents: agents.length > 0 ? agents : undefined };
 }
 
 async function runInstall(args: string[]): Promise<CliResult> {
-  const { source, scope } = parseInstallArgs(args);
+  const { source, scope, agents: agentFilter } = parseInstallArgs(args);
   if (!source && scope !== "project") {
     return { code: 1, stderr: "maui install: missing <source> argument" };
   }
 
   try {
-    const result = await installPlugin(source, { scope });
+    const result = await installPlugin(source, { scope, agents: agentFilter });
     const agentNames = result.agents.map((entry) => entry.agent).join(", ") || "no agents";
     const lines = [`Installed ${result.pluginName} → ${agentNames}`];
     if (result.skipped.length > 0) lines.push(`Skipped: ${result.skipped.join(", ")}`);

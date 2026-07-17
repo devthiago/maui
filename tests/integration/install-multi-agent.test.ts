@@ -153,4 +153,29 @@ describe("installPlugin multi-agent orchestration", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("--agent restricts install to only the named agent(s), skipping the rest even if detected", async () => {
+    await withFakeClaude(async (logPath) => {
+      await withTmpHome(async (home) => {
+        const source = await makeFixturePlugin("example-plugin");
+        try {
+          const result = await installPlugin(source, { home, agents: ["_default"] });
+
+          expect(result.agents.map((agent) => agent.agent)).toEqual(["_default"]);
+          expect(result.skipped.some((entry) => entry.startsWith("claude-code"))).toBe(true);
+          expect(result.skipped.some((entry) => entry.startsWith("kiro"))).toBe(true);
+
+          // _default's fallback was populated...
+          expect(
+            await Bun.file(join(home, ".agents", "skills", "example", "SKILL.md")).exists()
+          ).toBe(true);
+          // ...but claude-code was never attempted — the fake claude
+          // script's log file was never even created.
+          expect(await Bun.file(logPath).exists()).toBe(false);
+        } finally {
+          await rm(source, { recursive: true, force: true });
+        }
+      });
+    });
+  });
 });

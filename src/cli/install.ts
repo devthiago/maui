@@ -23,6 +23,8 @@ export interface InstallOptions {
   home?: string;
   cwd?: string;
   scope?: Scope;
+  /** Restrict install to only these agent IDs. Omitted/empty means "all detected". */
+  agents?: string[];
   confirm?: (message: string) => Promise<boolean>;
 }
 
@@ -124,8 +126,14 @@ export async function installPlugin(
   const agents: InstalledAgentEntry[] = [];
   const skipped: string[] = [];
   const failed: string[] = [];
+  const agentFilter = options.agents && options.agents.length > 0 ? options.agents : undefined;
 
   for (const [agentId, target] of Object.entries(manifest.targets)) {
+    if (agentFilter && !agentFilter.includes(agentId)) {
+      skipped.push(`${agentId} (not in --agent filter)`);
+      continue;
+    }
+
     if (isNativeMarketplaceTarget(target)) {
       if (scope === "project") {
         skipped.push(`${agentId} (project-scope native-marketplace install not yet supported)`);
