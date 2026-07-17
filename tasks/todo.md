@@ -697,3 +697,146 @@ command where one exists (e.g. `claude plugin marketplace update`).
 - `tests/integration/update.test.ts`
 
 **Estimated scope:** Small
+
+---
+
+## Task 25: `scaffoldMarketplace()` — repo-shell scaffold
+
+**Description:** Implement `scaffoldMarketplace(options)` in `core/scaffold.ts`
+(or a new `core/marketplace-scaffold.ts` if that keeps the file size
+sane): prompts are gathered by the CLI layer (Task 27), this function takes
+plain options and generates the repo shell per SPEC.md's
+`create-marketplace` section — `.claude-plugin/marketplace.json` (with
+`owner`, `metadata.description`/`metadata.version`, empty `plugins: []`),
+`.agents/plugins/marketplace.json` (`name`, empty `plugins: []`),
+`gemini-extension.json` (`name`, `version`, `description`,
+`contextFileName: "AGENTS.md"`), `plugins/.gitkeep`, `package.json` +
+`scripts/bump-version.ts` scoped to the marketplace-level files, `git init`.
+Also add the `owner` field to the *existing* standalone single-plugin
+`scaffoldPlugin()`'s self-hosted `marketplace.json` generation, since it's
+the same field found missing in both places.
+
+**Acceptance criteria:**
+- [ ] `.claude-plugin/marketplace.json` has `owner.name`, `metadata.version: "0.1.0"`, `plugins: []`
+- [ ] `.agents/plugins/marketplace.json` has `name` and `plugins: []`
+- [ ] `gemini-extension.json` has `contextFileName: "AGENTS.md"` alongside name/version/description
+- [ ] `plugins/.gitkeep` exists so the empty folder commits to git
+- [ ] `scripts/bump-version.ts` updates `package.json`, `.claude-plugin/marketplace.json`'s `metadata.version`, and `gemini-extension.json`'s `version`; skips `.agents/plugins/marketplace.json` gracefully if it has no top-level `version` key (it doesn't, per the reference repo — don't invent one)
+- [ ] `git init` run, no remote, no commits
+- [ ] Existing standalone `scaffoldPlugin()`'s self-hosted marketplace.json now also has an `owner` field (small addition, existing `scaffold.test.ts` coverage should still pass plus one new assertion)
+
+**Verification:**
+- [ ] `bun test tests/integration/marketplace-scaffold.test.ts` passes
+- [ ] `bun test tests/integration/scaffold.test.ts` still passes (regression check on the `owner` field addition)
+
+**Dependencies:** Task 23 (builds on the existing `scaffoldPlugin`/scaffold test patterns)
+
+**Files likely touched:**
+- `src/core/scaffold.ts`
+- `tests/integration/marketplace-scaffold.test.ts`
+- `tests/integration/scaffold.test.ts` (owner-field assertion)
+
+**Estimated scope:** Medium
+
+---
+
+## Task 26: `create-plugin` marketplace-mode detection + append-to-existing-manifests
+
+**Description:** Extend `scaffoldPlugin()` to detect an existing marketplace
+project before deciding what to generate: check for
+`<cwd>/.claude-plugin/marketplace.json`. If absent, behave exactly as
+today (standalone mode, unchanged — this must not regress). If present,
+switch to marketplace mode: create `plugins/<plugin-name>/` with only
+`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and the common
+source folders — no per-plugin `marketplace.json`, `gemini-extension.json`,
+or `maui.json`. Append `{ name, source: "./plugins/<name>", description,
+version, author }` to the root `.claude-plugin/marketplace.json`'s
+`plugins` array (matched/replaced by `name`, not blindly pushed — running
+`create-plugin` twice for the same name must update in place, not
+duplicate). Do the same for `.agents/plugins/marketplace.json` if it
+exists, using its own schema (`name`, `source: "./plugins/<name>"` as a
+plain string — no `policy`/`category`, per SPEC.md's explicit note that
+those aren't confirmed as standard). Generate a per-plugin
+`package.json` + `scripts/bump-version.ts` that bumps this plugin's own
+`package.json`/`.claude-plugin/plugin.json`/`.codex-plugin/plugin.json`
+*and* updates this plugin's matching entry inside both shared marketplace
+files — never touches the marketplace's own `metadata.version`.
+
+**Acceptance criteria:**
+- [ ] No existing `.claude-plugin/marketplace.json` in cwd → identical output to today's `scaffoldPlugin` (regression guard)
+- [ ] Existing marketplace present → `plugins/<name>/` created with only plugin.json/.codex-plugin/plugin.json + common folders, no marketplace.json/gemini-extension.json/maui.json inside it
+- [ ] Root `.claude-plugin/marketplace.json`'s `plugins` array gets a new entry for the plugin, with `source: "./plugins/<name>"`
+- [ ] `.agents/plugins/marketplace.json`'s `plugins` array gets a matching entry, if that file exists
+- [ ] Running `create-plugin` a second time with a **different** plugin name adds a second entry without disturbing the first (this is the actual "no manual effort" proof)
+- [ ] Running `create-plugin` again with the **same** plugin name updates that one entry in place, not a duplicate
+- [ ] The per-plugin `version:bump` script updates the plugin's own files *and* its entry in both shared marketplace files, and does not touch `metadata.version`
+
+**Verification:**
+- [ ] `bun test tests/integration/create-plugin-marketplace-mode.test.ts` passes, including the two-plugins-no-collision case and the version-bump-syncs-marketplace-entry case (actually running the generated script, per the existing `scaffold.test.ts` pattern of executing `bump-version.ts` as a real subprocess rather than just checking it was written)
+
+**Dependencies:** Task 25
+
+**Files likely touched:**
+- `src/core/scaffold.ts`
+- `tests/integration/create-plugin-marketplace-mode.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+## Task 27: CLI wiring — `create-plugin`, `create-marketplace`, `create` dispatcher
+
+**Description:** Rename the CLI's `create` subcommand handling so
+`create-plugin <plugin-name>` and `create-marketplace <marketplace-name>`
+are both real subcommands (mirroring today's `runCreate`, one calling
+`scaffoldPlugin`/`createPlugin`, the other calling the new
+`scaffoldMarketplace`/`createMarketplace`). `create <name>` becomes a thin
+dispatcher: prompts "Is this a single-plugin repo or a multi-plugin
+marketplace repo?" (injectable prompt, same pattern as `createPlugin`'s
+existing prompt injection) and calls one of the two based on the answer —
+no third scaffolding implementation.
+
+**Acceptance criteria:**
+- [ ] `maui create-plugin <name>` works standalone (same CLI-level behavior as today's `maui create`)
+- [ ] `maui create-marketplace <name>` works standalone
+- [ ] `maui create <name>` prompts single-vs-multi and dispatches correctly to each, with no independent scaffolding logic of its own
+- [ ] `maui help` / command list reflects all three subcommands
+
+**Verification:**
+- [ ] `bun test tests/unit/cli-create.test.ts` passes (extended with `create-marketplace` and dispatcher cases)
+- [ ] `bun run lint` / `bun run build` clean
+
+**Dependencies:** Task 25, Task 26
+
+**Files likely touched:**
+- `src/cli/create.ts`
+- `src/cli/commands.ts` (command list)
+- `src/cli/index.ts`
+- `tests/unit/cli-create.test.ts`
+
+**Estimated scope:** Small
+
+---
+
+## Task 28: End-to-end verification against SPEC.md's two-plugin success criterion
+
+**Description:** Not a new unit — a manual verification pass proving the
+literal SPEC.md Success Criterion: `create-marketplace` a repo, run
+`create-plugin` twice from inside it for two different plugin names,
+confirm both are independently listed in `.claude-plugin/marketplace.json`
+with correct `source` paths and zero manual JSON edits. This is the same
+kind of manual check that caught the real partial-install-failure bug
+during Task 23 — worth doing for real, not just trusting the unit tests.
+
+**Acceptance criteria:**
+- [ ] Two plugins scaffolded into the same marketplace repo, both present in `.claude-plugin/marketplace.json` and `.agents/plugins/marketplace.json` with correct entries
+- [ ] No manual file edits were needed between the two `create-plugin` runs
+- [ ] `git status` inside the scaffolded repo shows no unexpected/corrupted files (e.g. marketplace.json is still valid JSON, not double-written)
+
+**Verification:** manual, via Bash — no new automated test expected, though any bug found gets a regression test added to Task 26's suite before this is marked done.
+
+**Dependencies:** Task 27
+
+**Files likely touched:** none (verification only, unless it surfaces a bug)
+
+**Estimated scope:** Small
