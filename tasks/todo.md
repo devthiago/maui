@@ -740,7 +740,7 @@ the same field found missing in both places.
 
 ---
 
-## Task 26: `create-plugin` marketplace-mode detection + append-to-existing-manifests
+## Task 26: `create-plugin` marketplace-mode detection + append-to-existing-manifests ✅ done
 
 **Description:** Extend `scaffoldPlugin()` to detect an existing marketplace
 project before deciding what to generate: check for

@@ -464,14 +464,17 @@ literal fix for "adding another plugin forces manual effort"). It then:
   `plugins` array: `{ name, source: "./plugins/<name>", description,
   version, author }`.
 - **Appends** a matching entry to `.agents/plugins/marketplace.json`'s
-  `plugins` array, if that file exists (see `create-marketplace` below).
+  `plugins` array (`{ name, source }` only — that file's entries carry no
+  `version` field, confirmed absent in the reference repo), if that file
+  exists (see `create-marketplace` below).
 - Generates its own `package.json` + `scripts/bump-version.ts`, scoped to
   just this plugin: bumps `package.json`, `.claude-plugin/plugin.json`, and
   `.codex-plugin/plugin.json` — **and** updates this plugin's own entry
-  (matched by `name`) inside the shared root `.claude-plugin/marketplace.json`
-  and `.agents/plugins/marketplace.json`, so the marketplace catalog's
-  per-plugin version never drifts from the plugin's own manifest. Does not
-  touch the marketplace's own `metadata.version` — that's
+  (matched by `name`) inside the shared root `.claude-plugin/marketplace.json`,
+  whose entries *do* carry a `version` field, so the marketplace catalog's
+  per-plugin version never drifts from the plugin's own manifest.
+  `.agents/plugins/marketplace.json`'s entry has nothing to sync, by design
+  (see above). Does not touch the marketplace's own `metadata.version` — that's
   `create-marketplace`'s script's job, since the marketplace and each
   plugin it lists are independently versioned (confirmed in the reference
   repo: marketplace-level `1.7.1` vs. one plugin at `1.2.3`).

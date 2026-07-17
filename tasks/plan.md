@@ -127,7 +127,7 @@ the user (Gemini manifest at marketplace root; include the `.agents`
 manifest).
 
 - [x] Task 25: `scaffoldMarketplace()` — repo-shell scaffold
-- [ ] Task 26: `create-plugin` marketplace-mode detection + append-to-existing-manifests
+- [x] Task 26: `create-plugin` marketplace-mode detection + append-to-existing-manifests
 - [ ] Task 27: CLI wiring — `create-plugin`, `create-marketplace` subcommands, `create` becomes a dispatcher
 - [ ] Task 28: End-to-end verification against SPEC.md's two-plugin success criterion
 
