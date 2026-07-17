@@ -44,6 +44,7 @@ describe("scaffoldPlugin", () => {
 
       const marketplace = await Bun.file(join(targetDir, ".claude-plugin", "marketplace.json")).json();
       expect(marketplace.plugins[0].source).toBe(".");
+      expect(marketplace.owner).toEqual({ name: "example-user" });
 
       const maui = await Bun.file(join(targetDir, "maui.json")).json();
       expect(maui.targets["claude-code"]).toEqual({

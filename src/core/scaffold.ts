@@ -10,6 +10,14 @@ export interface ScaffoldOptions {
   targetDir?: string;
 }
 
+export interface MarketplaceScaffoldOptions {
+  marketplaceName: string;
+  githubUser: string;
+  description?: string;
+  license?: string;
+  targetDir?: string;
+}
+
 const COMMON_FOLDERS = ["skills", "agents", "commands", "rules", "prompts", "hooks"];
 
 const BUMP_VERSION_SCRIPT = `import { join } from "node:path";
@@ -39,6 +47,44 @@ for (const file of files) {
 }
 
 console.log(\`Bumped version to \${newVersion} across \${files.length} files.\`);
+`;
+
+const MARKETPLACE_BUMP_VERSION_SCRIPT = `import { join } from "node:path";
+
+const newVersion = process.argv[2];
+if (!newVersion) {
+  console.error("Usage: bun run version:bump <new-version>");
+  process.exit(1);
+}
+
+async function bumpJson(relativePath: string, apply: (json: any) => void): Promise<boolean> {
+  const path = join(process.cwd(), relativePath);
+  const target = Bun.file(path);
+  if (!(await target.exists())) return false;
+
+  const json = await target.json();
+  apply(json);
+  await Bun.write(path, \`\${JSON.stringify(json, null, 2)}\\n\`);
+  return true;
+}
+
+await bumpJson("package.json", (json) => {
+  json.version = newVersion;
+});
+await bumpJson(".claude-plugin/marketplace.json", (json) => {
+  json.metadata = json.metadata ?? {};
+  json.metadata.version = newVersion;
+});
+await bumpJson("gemini-extension.json", (json) => {
+  json.version = newVersion;
+});
+await bumpJson(".agents/plugins/marketplace.json", (json) => {
+  // No confirmed top-level version field for this file — only bump it if
+  // one is already present, never invent one.
+  if ("version" in json) json.version = newVersion;
+});
+
+console.log(\`Bumped marketplace version to \${newVersion}.\`);
 `;
 
 async function writeJson(path: string, value: unknown): Promise<void> {
@@ -72,6 +118,7 @@ export async function scaffoldPlugin(options: ScaffoldOptions): Promise<string> 
   });
   await writeJson(join(targetDir, ".claude-plugin", "marketplace.json"), {
     name: options.pluginName,
+    owner: { name: options.githubUser },
     plugins: [{ name: options.pluginName, source: ".", description }],
   });
 
@@ -117,6 +164,63 @@ export async function scaffoldPlugin(options: ScaffoldOptions): Promise<string> 
 
   await mkdir(join(targetDir, "scripts"), { recursive: true });
   await Bun.write(join(targetDir, "scripts", "bump-version.ts"), BUMP_VERSION_SCRIPT);
+
+  await $`git init -q ${targetDir}`.quiet();
+
+  return targetDir;
+}
+
+/**
+ * Scaffolds a multi-plugin marketplace repo shell per SPEC.md's
+ * "create-marketplace" section, confirmed against wshobson/agents: root
+ * .claude-plugin/marketplace.json and .agents/plugins/marketplace.json
+ * (both starting with an empty plugins array, populated later by
+ * scaffoldPluginInMarketplace), a single repo-level gemini-extension.json
+ * (Gemini has no per-plugin marketplace concept), and an empty plugins/
+ * folder. Initializes git locally — never pushes or adds a remote.
+ */
+export async function scaffoldMarketplace(options: MarketplaceScaffoldOptions): Promise<string> {
+  const targetDir = options.targetDir ?? join(process.cwd(), options.marketplaceName);
+  const description = options.description ?? "";
+  const version = "0.1.0";
+
+  await mkdir(join(targetDir, ".claude-plugin"), { recursive: true });
+  await writeJson(join(targetDir, ".claude-plugin", "marketplace.json"), {
+    name: options.marketplaceName,
+    owner: { name: options.githubUser },
+    metadata: { description, version },
+    plugins: [],
+  });
+
+  await mkdir(join(targetDir, ".agents", "plugins"), { recursive: true });
+  await writeJson(join(targetDir, ".agents", "plugins", "marketplace.json"), {
+    name: options.marketplaceName,
+    plugins: [],
+  });
+
+  await writeJson(join(targetDir, "gemini-extension.json"), {
+    name: options.marketplaceName,
+    version,
+    description,
+    contextFileName: "AGENTS.md",
+  });
+
+  await mkdir(join(targetDir, "plugins"), { recursive: true });
+  await Bun.write(join(targetDir, "plugins", ".gitkeep"), "");
+
+  await writeJson(join(targetDir, "package.json"), {
+    name: options.marketplaceName,
+    version,
+    description,
+    private: true,
+    ...(options.license ? { license: options.license } : {}),
+    scripts: {
+      "version:bump": "bun run scripts/bump-version.ts",
+    },
+  });
+
+  await mkdir(join(targetDir, "scripts"), { recursive: true });
+  await Bun.write(join(targetDir, "scripts", "bump-version.ts"), MARKETPLACE_BUMP_VERSION_SCRIPT);
 
   await $`git init -q ${targetDir}`.quiet();
 

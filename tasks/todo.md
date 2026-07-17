@@ -700,7 +700,7 @@ command where one exists (e.g. `claude plugin marketplace update`).
 
 ---
 
-## Task 25: `scaffoldMarketplace()` — repo-shell scaffold
+## Task 25: `scaffoldMarketplace()` — repo-shell scaffold ✅ done
 
 **Description:** Implement `scaffoldMarketplace(options)` in `core/scaffold.ts`
 (or a new `core/marketplace-scaffold.ts` if that keeps the file size
