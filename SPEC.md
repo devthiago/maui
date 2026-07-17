@@ -517,6 +517,24 @@ plain string, plus `policy.installation`/`policy.authentication` and
 an official standard** — only observed in this one real-world repo — so
 maui's generator treats `name`/`plugins`/`source` as the only required
 shape and leaves `policy`/`category` out unless later confirmed elsewhere.
+Confirmed at codex-marketplace.com/docs that this is more than an
+`.agents`-convention nicety: `codex-marketplace`'s own CLI generates this
+exact file (`$REPO/.agents/plugins/marketplace.json`) when it discovers a
+multi-plugin repo via `npx codex-marketplace add owner/repo --plugins`
+(which crawls the `plugins/` folder directly — no repo-level catalog file
+is needed for Codex discovery at all, so no separate Codex-specific
+manifest is required from `create-marketplace`). Publishing this file
+ourselves just means a consumer gets the same metadata without having to
+run that discovery step first.
+
+**Codex and OpenCode don't need their own catalog files**: Codex, per
+above, discovers plugins by crawling `plugins/` directly — the per-plugin
+`.codex-plugin/plugin.json` files `create-plugin` already generates are
+sufficient. OpenCode has no marketplace/multi-plugin-discovery mechanism at
+all (confirmed both by its own docs and by the reference repo, whose only
+OpenCode-related files are a hand-written Python install script, not a
+native catalog format) — the existing per-plugin npm-publish gap (Open
+Question #2b) is unchanged by multi-plugin repos.
 
 ### `maui create <name>`
 
