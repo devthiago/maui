@@ -181,6 +181,9 @@ await bumpJson(".claude-plugin/plugin.json", (json) => {
 await bumpJson(".codex-plugin/plugin.json", (json) => {
   json.version = newVersion;
 });
+await bumpJson("maui.json", (json) => {
+  json.version = newVersion;
+});
 await bumpMarketplaceEntry("../../.claude-plugin/marketplace.json");
 await bumpMarketplaceEntry("../../.agents/plugins/marketplace.json");
 
@@ -328,16 +331,24 @@ async function scaffoldStandalonePlugin(options: ScaffoldOptions): Promise<strin
 
 /**
  * Scaffolds a plugin into an existing marketplace repo's plugins/ folder:
- * only the plugin's own manifests and source folders — no marketplace.json,
- * gemini-extension.json, or maui.json, since those are repo-level and
- * already exist. Appends (or replaces, matched by name) this plugin's
- * entry in the shared .claude-plugin/marketplace.json and
- * .agents/plugins/marketplace.json instead of requiring manual edits.
+ * the plugin's own manifests and source folders, plus a per-plugin
+ * `maui.json` (targets pre-wired the same as the standalone scaffold) so
+ * `maui install` and symlink adapters can reach this one plugin
+ * independently of its siblings — no `marketplace.json` or
+ * `gemini-extension.json` here, since those stay repo-level. Appends (or
+ * replaces, matched by name) this plugin's entry in the shared
+ * `.claude-plugin/marketplace.json` and `.agents/plugins/marketplace.json`
+ * instead of requiring manual edits.
  */
 async function scaffoldPluginInMarketplace(options: ScaffoldOptions, cwd: string): Promise<string> {
   const targetDir = options.targetDir ?? join(cwd, "plugins", options.pluginName);
   const description = options.description ?? "";
   const version = "0.1.0";
+
+  const rootMarketplace = await Bun.file(join(cwd, ".claude-plugin", "marketplace.json")).json();
+  const marketplaceName = rootMarketplace.name as string;
+  const marketplaceOwner = rootMarketplace.owner?.name as string | undefined;
+  const marketplaceRepo = marketplaceOwner ? `${marketplaceOwner}/${marketplaceName}` : marketplaceName;
 
   for (const folder of COMMON_FOLDERS) {
     await mkdir(join(targetDir, folder), { recursive: true });
@@ -364,6 +375,23 @@ async function scaffoldPluginInMarketplace(options: ScaffoldOptions, cwd: string
     name: options.pluginName,
     description,
     version,
+  });
+
+  await writeJson(join(targetDir, "maui.json"), {
+    name: options.pluginName,
+    version,
+    description,
+    targets: {
+      "claude-code": { marketplace: true, repo: marketplaceRepo, marketplaceName },
+      codex: { marketplace: true, repo: marketplaceRepo },
+      gemini: { marketplace: true, repo: `https://github.com/${marketplaceRepo}` },
+      grok: { marketplace: true, repo: marketplaceRepo },
+      cursor: { "rules/": ".cursor/rules/" },
+      windsurf: { "rules/": ".windsurf/rules/" },
+      kiro: { "rules/": ".kiro/steering/" },
+      opencode: { "skills/": "skills/", "commands/": "commands/" },
+      _default: { "skills/": "skills/", "commands/": "commands/" },
+    },
   });
 
   await writeJson(join(targetDir, "package.json"), {

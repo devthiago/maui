@@ -312,12 +312,12 @@ close, not just extend around:
 
 - [x] Task 47: `maui update` — dedupe by `sourceRepo` for both `update <name>` and bare `update` (new `updateAll`, `fetchImpl` injection for test observability rather than module-mocking)
 - [x] Task 48: `maui remove --purge` — fix the cache-dir-key bug + sibling-check before deleting a shared clone (`removePlugin` now returns a `RemoveResult` instead of `void` so the "why" is reportable)
-- [ ] Task 49: `create-plugin` marketplace mode generates a per-plugin `maui.json`
+- [x] Task 49: `create-plugin` marketplace mode generates a per-plugin `maui.json`
 
 ### Checkpoint: Phase 12 (final)
-- [ ] `create-marketplace` + `create-plugin` twice (Task 49) produces a real two-plugin repo installable end to end via `maui install <repo> --all-plugins`
-- [ ] Removing one plugin leaves the shared clone and sibling's symlinks/native install intact; removing the last one purges the clone
-- [ ] `bun test`, `bun run build`, `bun run lint` all clean
+- [x] `create-marketplace` + `create-plugin` twice (Task 49) produces a real two-plugin repo installable end to end via `maui install <repo> --all-plugins` — proven in `tests/integration/scaffold-to-install-e2e.test.ts` against the real `scaffoldMarketplace`/`scaffoldPlugin` output, not a hand-authored fixture
+- [x] Removing one plugin leaves the shared clone and sibling's symlinks/native install intact; removing the last one purges the clone
+- [x] `bun test` (193 tests), `bun run build`, `bun run lint` all clean
 
 ## Risks and Mitigations
 

@@ -15,7 +15,7 @@ async function withTmpDir(fn: (dir: string) => Promise<void>): Promise<void> {
 }
 
 describe("scaffoldPlugin in marketplace mode", () => {
-  it("creates plugins/<name>/ with no marketplace.json, gemini-extension.json, or maui.json inside it", async () => {
+  it("creates plugins/<name>/ with no marketplace.json or gemini-extension.json inside it, but a per-plugin maui.json targeting the marketplace repo", async () => {
     await withTmpDir(async (root) => {
       const repoDir = join(root, "my-marketplace");
       await scaffoldMarketplace({ marketplaceName: "my-marketplace", githubUser: "example-user", targetDir: repoDir });
@@ -37,7 +37,28 @@ describe("scaffoldPlugin in marketplace mode", () => {
 
       expect(await Bun.file(join(pluginDir, ".claude-plugin", "marketplace.json")).exists()).toBe(false);
       expect(await Bun.file(join(pluginDir, "gemini-extension.json")).exists()).toBe(false);
-      expect(await Bun.file(join(pluginDir, "maui.json")).exists()).toBe(false);
+
+      const maui = await Bun.file(join(pluginDir, "maui.json")).json();
+      expect(maui.name).toBe("plugin-one");
+      expect(maui.version).toBe("0.1.0");
+      expect(maui.description).toBe("First plugin");
+      // repo/marketplaceName point at the *marketplace* repo (root
+      // .claude-plugin/marketplace.json's own name/owner), not the
+      // plugin's own name — the plugin doesn't have its own repo, it lives
+      // inside the marketplace's.
+      expect(maui.targets["claude-code"]).toEqual({
+        marketplace: true,
+        repo: "example-user/my-marketplace",
+        marketplaceName: "my-marketplace",
+      });
+      expect(maui.targets.codex).toEqual({ marketplace: true, repo: "example-user/my-marketplace" });
+      expect(maui.targets.gemini).toEqual({
+        marketplace: true,
+        repo: "https://github.com/example-user/my-marketplace",
+      });
+      expect(maui.targets.grok).toEqual({ marketplace: true, repo: "example-user/my-marketplace" });
+      expect(maui.targets.cursor).toEqual({ "rules/": ".cursor/rules/" });
+      expect(maui.targets._default).toEqual({ "skills/": "skills/", "commands/": "commands/" });
     });
   });
 
@@ -123,6 +144,8 @@ describe("scaffoldPlugin in marketplace mode", () => {
       expect(pluginJson.version).toBe("0.5.0");
       const codexJson = await Bun.file(join(pluginDir, ".codex-plugin", "plugin.json")).json();
       expect(codexJson.version).toBe("0.5.0");
+      const mauiJson = await Bun.file(join(pluginDir, "maui.json")).json();
+      expect(mauiJson.version).toBe("0.5.0");
 
       const marketplace = await Bun.file(join(repoDir, ".claude-plugin", "marketplace.json")).json();
       expect(marketplace.plugins[0].version).toBe("0.5.0");

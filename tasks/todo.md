@@ -1,6 +1,6 @@
 # Task List: maui
 
-## Task 49: `create-plugin` marketplace mode generates a per-plugin `maui.json`
+## Task 49: `create-plugin` marketplace mode generates a per-plugin `maui.json` ✅ done
 
 **Description:** `scaffoldPluginInMarketplace` (`src/core/scaffold.ts`,
 ~line 337) generates `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`,
@@ -19,20 +19,22 @@ bump this new `maui.json`'s `version` field alongside the files it already
 bumps.
 
 **Acceptance criteria:**
-- [ ] `plugins/<name>/maui.json` exists after marketplace-mode `create-plugin`, `name`/`version` matching the plugin's own `.claude-plugin/plugin.json`
-- [ ] `targets["claude-code"].repo`/`marketplaceName` match the root marketplace.json's owner/name, not the plugin's own name
-- [ ] Existing standalone-mode scaffold regression guard (same test file) is unaffected
-- [ ] The per-plugin `version:bump` script also bumps the new `maui.json`'s `version`
+- [x] `plugins/<name>/maui.json` exists after marketplace-mode `create-plugin`, `name`/`version` matching the plugin's own `.claude-plugin/plugin.json`
+- [x] `targets["claude-code"].repo`/`marketplaceName` match the root marketplace.json's owner/name, not the plugin's own name
+- [x] Existing standalone-mode scaffold regression guard (same test file) is unaffected
+- [x] The per-plugin `version:bump` script also bumps the new `maui.json`'s `version`
 
 **Verification:**
-- [ ] `bun test tests/integration/create-plugin-marketplace-mode.test.ts` (flip the "no maui.json" assertion, add new coverage)
-- [ ] `bun test` (full suite regression)
+- [x] `bun test tests/integration/create-plugin-marketplace-mode.test.ts` (flipped the "no maui.json" assertion, added content/bump coverage)
+- [x] `bun test` (full suite regression) + `bun run build` + `bun run lint`
+- [x] Added `tests/integration/scaffold-to-install-e2e.test.ts` — Phase 12's final checkpoint proof: real `scaffoldMarketplace`+`scaffoldPlugin` output (not a hand-authored fixture) installed end to end via `installMarketplace`, confirming independent registry entries, correct `sourceRepo`/`pluginPath`, and purge-sibling-check behavior against the actual scaffold output
 
-**Dependencies:** None — independent of Tasks 36–48, can ship any time
+**Dependencies:** None — independent of Tasks 36–48, shipped last for the phase's end-to-end proof
 
-**Files likely touched:**
-- `src/core/scaffold.ts`
+**Files touched:**
+- `src/core/scaffold.ts` (`scaffoldPluginInMarketplace` generates `maui.json`; `pluginInMarketplaceBumpVersionScript` bumps it)
 - `tests/integration/create-plugin-marketplace-mode.test.ts`
+- `tests/integration/scaffold-to-install-e2e.test.ts` (new)
 
 **Estimated scope:** Medium
 
