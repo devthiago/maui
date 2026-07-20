@@ -172,8 +172,11 @@ safe default rather than guess.
       primary reference page never confirmed or denied the old by-analogy
       shape; adopted a more specific, session-surfaced direct-git-install
       path instead, flagged as not fully docs.x.ai-confirmed
-- [ ] Task 32: Decide GitHub Copilot / Antigravity adapter scope (remainder
-      of Open Question #1)
+- [x] Task 32: Decide GitHub Copilot / Antigravity adapter scope (remainder
+      of Open Question #1) — research finding overturned the plan's
+      assumed default: both tools have real, scriptable plugin CLIs.
+      Per this task's own guardrail, no adapter was built here; flagged as
+      candidate work for a future phase (see below) instead.
 - [ ] Task 33: Fill in remaining contextFile conventions for Codex, Grok,
       Cursor, Windsurf, Kiro (remainder of Open Question #8)
 - [x] Task 34: Resolve the remaining decision-only Open Questions (#4
@@ -189,6 +192,22 @@ safe default rather than guess.
 - [ ] `bun test`, `bun run build`, `bun run lint` all clean
 - [ ] `grep -n "unconfirmed\|not found\|TBD" SPEC.md` returns nothing tied
       to Open Questions #1–#8
+
+### Future Phase Candidates (surfaced by Task 32, not scoped yet)
+
+- **GitHub Copilot adapter**: confirmed via GitHub's own official docs to
+  have a Claude-Code-shaped marketplace CLI
+  (`copilot plugin marketplace add`, `copilot plugin install
+  <name>@<marketplace>`, `copilot plugin uninstall <name>`) — likely a
+  fast, low-risk addition, same shape as Tasks 13–18.
+- **Antigravity adapter**: `agy plugin install|uninstall|list` subcommands
+  confirmed to exist, but exact argument syntax (git URL support,
+  marketplace concept) needs one more research pass before implementation
+  — Google's own docs page is JS-rendered and wasn't fetchable as static
+  content during Task 32's research.
+
+Neither is part of Phase 11's scope — see SPEC.md's Open Question #1 for
+the full finding.
 
 ## Risks and Mitigations
 

@@ -760,12 +760,40 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
 
 ## Open Questions
 
-1. Exact global/project folder conventions for Cursor, Windsurf, and Kiro
-   still need to be researched and encoded per-adapter during the
-   Plan/Implement phase (`source-driven-development` — verify against each
-   tool's own docs). GitHub Copilot and Antigravity additionally need a
-   decision on whether they get a dedicated adapter or fall through to the
-   generic `.agents` fallback for v1.
+1. *Resolved* (Cursor/Windsurf/Kiro folder conventions): confirmed and
+   implemented per-adapter (see `cursor.ts`, `windsurf.ts`, `kiro.ts`) —
+   this part of the question was stale, since those adapters have shipped
+   since Phase 4.
+
+   *GitHub Copilot / Antigravity adapter decision — research finding
+   overturns the assumed default.* Both tools turn out to have real,
+   scriptable, non-interactive plugin CLIs, not just interactive-only or
+   nonexistent ones:
+   - **GitHub Copilot CLI**: confirmed via GitHub's own official docs
+     (docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/plugins-finding-installing)
+     — structurally almost identical to Claude Code's marketplace model:
+     `copilot plugin marketplace add <owner>/<repo>` (or a local path, or a
+     non-GitHub git URL) to register a marketplace, then
+     `copilot plugin install <plugin-name>@<marketplace-name>`, and
+     `copilot plugin uninstall <plugin-name>`.
+   - **Antigravity**: `agy plugin install|uninstall|list|enable|disable`
+     subcommands are confirmed to exist (multiple third-party references;
+     Google's own docs page at antigravity.google/docs/cli-plugins is a
+     JS-rendered page that couldn't be fetched as static content for this
+     research pass), including `agy plugin import gemini` for migrating
+     Gemini CLI extensions — but exact argument syntax (git URL support,
+     marketplace concept if any) is **not yet confirmed** the way Copilot's
+     is.
+   - **Decision**: do not build either adapter as part of this
+     open-questions cleanup (per this task's own scope guardrail — a new
+     adapter is implementation work, not a documentation decision). Both
+     are good candidates for a future phase, modeled on Tasks 13–18's
+     research-then-implement pattern: Copilot is likely a fast, low-risk
+     addition given how thoroughly confirmed its shape already is;
+     Antigravity needs one more round of research on exact `agy plugin
+     install` argument syntax before implementation. Until then, both fall
+     through to the generic `.agents` fallback, which is already fully
+     functional for any undetected/unlisted agent.
 2. *Resolved*: `gemini extensions uninstall <name>` is a real, non-
    interactive terminal command, confirmed at
    google-gemini.github.io/gemini-cli/docs/extensions/ — the original spec

@@ -994,7 +994,7 @@ smoke-test against a real `grok` CLI before production use.
 
 ---
 
-## Task 32: Decide GitHub Copilot / Antigravity adapter scope
+## Task 32: Decide GitHub Copilot / Antigravity adapter scope ✅ done
 
 **Description:** Neither GitHub Copilot nor Antigravity has a dedicated
 maui adapter today — both fall through to the generic `_default` `.agents`
@@ -1007,16 +1007,33 @@ explicit in SPEC.md, not to speculatively build an adapter for a tool with
 no confirmed automation surface.
 
 **Acceptance criteria:**
-- [ ] SPEC.md's Open Question #1 (the GitHub Copilot/Antigravity portion) rewritten as an explicit decision with rationale, not left open
-- [ ] If a scriptable CLI *is* found for either tool: do NOT implement the adapter in this task — stop and report back so a new, separate follow-up task can be scoped for it (same shape as Tasks 13–18)
+- [x] SPEC.md's Open Question #1 (the GitHub Copilot/Antigravity portion) rewritten as an explicit decision with rationale, not left open
+- [x] A scriptable CLI *was* found for both tools: did NOT implement either adapter in this task — flagged as future-phase candidates in `tasks/plan.md` instead
+
+**What actually happened:** the recommended default in this task's own
+description ("no dedicated adapter for v1") turned out to be wrong — both
+tools have real, non-interactive plugin CLIs. **GitHub Copilot CLI** is
+solidly confirmed via GitHub's own official docs: a marketplace model
+almost identical to Claude Code's (`copilot plugin marketplace add
+<owner>/<repo>`, `copilot plugin install <name>@<marketplace>`, `copilot
+plugin uninstall <name>`). **Antigravity** has confirmed `agy plugin
+install|uninstall|list|enable|disable` subcommands (multiple third-party
+references; Google's own docs page is JS-rendered and wasn't fetchable as
+static content), but exact argument syntax (git URL support, marketplace
+concept) isn't confirmed yet. Per this task's own guardrail, stopped short
+of implementing either — recorded both as candidates for a future phase in
+`tasks/plan.md`'s new "Future Phase Candidates" section, not scoped as full
+tasks here.
 
 **Verification:**
-- [ ] SPEC.md reads internally consistent — no code changes expected
+- [x] SPEC.md reads internally consistent
+- [x] No code changes made (as expected — pure research + decision)
 
 **Dependencies:** None
 
-**Files likely touched:**
-- `SPEC.md` only (expected)
+**Files touched:**
+- `SPEC.md`
+- `tasks/plan.md` (Future Phase Candidates note)
 
 **Estimated scope:** Small
 
