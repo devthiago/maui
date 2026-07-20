@@ -1,5 +1,7 @@
 # maui
 
+**maui** stands for **M**ulti **A**gents **U**nique **I**nstall.
+
 **A global, multi-agent toolset installer.** One command installs a plugin's
 skills, agents, commands, rules, and hooks into whichever AI coding agents
 you actually have on your machine — Claude Code, Codex CLI, Gemini CLI,
