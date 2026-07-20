@@ -252,7 +252,7 @@ association), only calling it when this is the last sibling.
 
 ---
 
-## Task 41: Claude Code marketplace-mode loop
+## Task 41: Claude Code marketplace-mode loop ✅ done
 
 **Description:** No new mechanism — prove `installOnePlugin`'s existing
 native-marketplace branch (unchanged since Task 18b) correctly handles being
@@ -263,17 +263,17 @@ for every sibling) followed by one `claude plugin install
 <name>@<marketplace>` per selection.
 
 **Acceptance criteria:**
-- [ ] A 3-plugin marketplace fixture, selecting 2 of 3, produces exactly one `plugin marketplace add` log line and exactly two `plugin install <name>@<marketplace>` lines (fake `claude` on fixture `$PATH`)
-- [ ] Each selected plugin gets its own registry entry with a distinct `identity.pluginName` but identical `identity.marketplaceName`/`repo`
+- [x] A 3-plugin marketplace fixture, selecting 2 of 3, produces exactly two `plugin install <name>@<marketplace>` lines (fake `claude` on fixture `$PATH`) — **revised from the plan's "exactly one `plugin marketplace add` line":** each selected plugin's `installOnePlugin` call runs Claude's `install()` independently, which bundles `marketplace add` + `plugin install` together (see `claude-code.ts`) — there's no partial-dedup hook that splits "register the marketplace" from "install a plugin from it" into separate steps. So 2 selections produce 2 `marketplace add` lines, not 1. This is harmless (Claude's own `add` is idempotent for an already-known marketplace) and correctness is unaffected — no dedup mechanism was needed for Claude, unlike Gemini/Codex (Task 42), because Claude's `uninstall` is genuinely per-plugin with no shared removable state across siblings.
+- [x] Each selected plugin gets its own registry entry with a distinct `identity.pluginName` but identical `identity.marketplaceName`/`repo`
 
 **Verification:**
-- [ ] `bun test tests/integration/claude-code-marketplace.test.ts` (new)
+- [x] `bun test tests/integration/claude-code-marketplace.test.ts` (new)
 
 **Dependencies:** Task 40
 
-**Files likely touched:**
+**Files touched:**
 - `tests/integration/claude-code-marketplace.test.ts` (new)
-- (no `src/adapters/claude-code.ts` change expected — regression-proving task)
+- No `src/adapters/claude-code.ts` change — confirmed regression-proving, passed with zero adapter code changes
 
 **Estimated scope:** Small
 

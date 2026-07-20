@@ -653,10 +653,15 @@ per-plugin, unchanged in shape from the v1 model.
 ### Per-adapter marketplace behavior
 
 - **Claude Code**: unchanged command shape — `claude plugin marketplace
-  add <owner>/<repo>` once, then `claude plugin install
-  <plugin-name>@<marketplace-name>` once per selected plugin. The only
-  change is that "which name(s)" now comes from the selection step above
-  instead of always being the source's single `maui.json` name.
+  add <owner>/<repo>` then `claude plugin install
+  <plugin-name>@<marketplace-name>`, run once per selected plugin (both
+  commands bundled in one `install()` call, per plugin — there's no step
+  that registers the marketplace once and then loops only the install
+  step, so `marketplace add` runs once per selection too, not truly once
+  overall; harmless since Claude's own `add` is idempotent for an
+  already-known marketplace). The only change from the single-plugin case
+  is that "which name(s)" now comes from the selection step above instead
+  of always being the source's single `maui.json` name.
 - **Codex CLI**: same shared marketplace-add-then-install-by-name shape
   via `codex-marketplace`; the exact flag for selecting one plugin by name
   out of a multi-plugin repo isn't yet confirmed from

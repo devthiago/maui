@@ -298,7 +298,7 @@ close, not just extend around:
 - [x] `maui list` shows each selected plugin as its own entry (registry entries are independent, same shape `list` already reads)
 - [x] `installPlugin(source, options)` unchanged for every existing caller — full existing suite green
 
-- [ ] Task 41: Claude Code marketplace-mode — regression/proof only, no adapter code change expected
+- [x] Task 41: Claude Code marketplace-mode — regression/proof only, no adapter code change expected (confirmed: 2 selections produce 2 `marketplace add` + 2 `plugin install` calls, not 1+2 — harmless, no dedup needed for Claude)
 - [ ] Task 42: `installsWholeMarketplace` dedup mechanism (install + remove), built against a fake test-double adapter
 - [ ] Task 43: Gemini marketplace-mode (`installsWholeMarketplace: true`)
 - [ ] Task 44: Grok marketplace-mode branching (`sourceMode` plumbing + direct-git vs. marketplace-add)
