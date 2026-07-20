@@ -164,8 +164,10 @@ safe default rather than guess.
       pattern (Open Question #3) — done first since `scaffold.ts`'s
       already-shipped output depends on it. Confirmed by Claude Code's own
       docs: `source: "."` is correct as-is, no code change needed.
-- [ ] Task 30: Confirm Gemini's uninstall syntax + project-scope contextFile
-      path (Open Question #2, part of #8)
+- [x] Task 30: Confirm Gemini's uninstall syntax + project-scope contextFile
+      path (Open Question #2, part of #8). Uninstall confirmed and
+      implemented; project-scope contextFile path stayed genuinely
+      unconfirmed and rolled into Task 33.
 - [ ] Task 31: Confirm Grok CLI argument shapes (Open Question #2c)
 - [ ] Task 32: Decide GitHub Copilot / Antigravity adapter scope (remainder
       of Open Question #1)

@@ -58,13 +58,16 @@ describe("geminiAdapter.install", () => {
 });
 
 describe("geminiAdapter.remove", () => {
-  it("reports removal as unsupported rather than guessing an unconfirmed command", async () => {
-    await expect(
-      geminiAdapter.remove({
+  it("runs the confirmed `gemini extensions uninstall <name>` command", async () => {
+    await withFakeGemini('#!/bin/sh\necho "$@" >> "__LOG__"\nexit 0\n', async (logPath) => {
+      await geminiAdapter.remove({
         pluginName: "example-plugin",
         repo: "https://github.com/example-user/example-plugin",
         marketplaceName: "example-plugin",
-      })
-    ).rejects.toThrow(/not supported|unsupported/i);
+      });
+
+      const log = await readFile(logPath, "utf-8");
+      expect(log.trim()).toBe("extensions uninstall example-plugin");
+    });
   });
 });

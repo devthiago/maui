@@ -1,15 +1,13 @@
 import { resolveBinary, runNativeCommand } from "../core/marketplace-exec";
-import { UnsupportedRemovalError } from "../core/errors";
 import type { NativeMarketplaceAdapter } from "../types";
 
-export { UnsupportedRemovalError };
-
 /**
- * `gemini extensions install <github-url>` is confirmed at
- * geminicli.com/docs/extensions/. A non-interactive `uninstall` equivalent
- * is not: geminicli.com/docs/reference/commands lists "uninstall" only as
- * an interactive /extensions slash-command subcommand, with no confirmed
- * terminal syntax — so remove() reports unsupported rather than guessing.
+ * `gemini extensions install <github-url>` and
+ * `gemini extensions uninstall <name>` are both confirmed real, non-
+ * interactive terminal commands at
+ * google-gemini.github.io/gemini-cli/docs/extensions/ (the uninstall verb
+ * was not found during the original spec research, which only checked
+ * geminicli.com/docs/reference/commands — a different, less complete page).
  */
 export const geminiAdapter: NativeMarketplaceAdapter = {
   id: "gemini",
@@ -24,9 +22,6 @@ export const geminiAdapter: NativeMarketplaceAdapter = {
   },
 
   async remove(identity) {
-    throw new UnsupportedRemovalError(
-      identity.pluginName,
-      'run "gemini extensions uninstall" inside an interactive gemini session, or check "gemini extensions --help" for the current non-interactive syntax.'
-    );
+    await runNativeCommand("gemini", ["extensions", "uninstall", identity.pluginName]);
   },
 };

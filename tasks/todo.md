@@ -908,7 +908,7 @@ correctness bug in the scaffold.
 
 ---
 
-## Task 30: Confirm Gemini's uninstall syntax and project-scope contextFile path
+## Task 30: Confirm Gemini's uninstall syntax and project-scope contextFile path ✅ done
 
 **Description:** `geminiAdapter.remove()` (`src/adapters/gemini.ts`)
 currently throws `UnsupportedRemovalError` because no non-interactive
@@ -920,21 +920,30 @@ project-scope `<project>/GEMINI.md` contextFile path in
 confirmed global `~/.gemini/GEMINI.md` path but never independently checked.
 
 **Acceptance criteria:**
-- [ ] If a non-interactive uninstall command is confirmed: `geminiAdapter.remove()` implements it (mirrors `claudeCodeAdapter.remove()`'s shape), with a failing-then-passing integration test proving it
-- [ ] If genuinely still undocumented: `UnsupportedRemovalError` stays, but SPEC.md's Open Question #2 wording changes from "not found in pages fetched" to a definitive, dated "confirmed absent"
-- [ ] Gemini's project-scope `contextFile` entry in `context-file.ts` is corrected if research contradicts the current assumption, otherwise the SPEC.md table's "assumed by symmetry, verify" note is updated to "confirmed"
+- [x] If a non-interactive uninstall command is confirmed: `geminiAdapter.remove()` implements it (mirrors `claudeCodeAdapter.remove()`'s shape), with a failing-then-passing integration test proving it
+- [x] Gemini's project-scope `contextFile` entry: not corrected, and not marked confirmed either — the new source addressed a different concept (an extension's own bundled `GEMINI.md`, not the general project memory file); left genuinely unconfirmed, folded into Task 33
 
 **Verification:**
-- [ ] `bun test` (full suite) passes
-- [ ] If `remove()` changes: new test fails before the fix, passes after (TDD)
+- [x] `bun test` (full suite) passes — 131 tests, no regressions
+- [x] `remove()` changed: new test failed before the fix (asserted the old `UnsupportedRemovalError`'s replacement), passed after
+
+**What actually happened:** `gemini extensions uninstall <name>` is
+confirmed real and non-interactive at
+google-gemini.github.io/gemini-cli/docs/extensions/ — a different, more
+complete page than the one originally checked
+(geminicli.com/docs/reference/commands). `geminiAdapter.remove()` now runs
+it. The project-scope `GEMINI.md` contextFile question stayed open: the
+new source's mention of `GEMINI.md` turned out to describe a per-extension
+bundled file loaded by that extension itself, not the general
+`postinstall`-context memory file maui cares about — a different concept
+entirely, so nothing to correct or confirm from it either way.
 
 **Dependencies:** None
 
-**Files likely touched:**
+**Files touched:**
 - `SPEC.md`
 - `src/adapters/gemini.ts`
-- `src/core/context-file.ts`
-- Gemini's integration test file (check `tests/integration/` for the existing one before assuming a new file is needed)
+- `tests/integration/gemini.test.ts`
 
 **Estimated scope:** Small
 

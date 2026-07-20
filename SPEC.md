@@ -762,9 +762,12 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
    tool's own docs). GitHub Copilot and Antigravity additionally need a
    decision on whether they get a dedicated adapter or fall through to the
    generic `.agents` fallback for v1.
-2. Confirm the exact `gemini extensions uninstall` syntax (not found in the
-   pages fetched during spec research) before implementing the Gemini
-   adapter's `remove`.
+2. *Resolved*: `gemini extensions uninstall <name>` is a real, non-
+   interactive terminal command, confirmed at
+   google-gemini.github.io/gemini-cli/docs/extensions/ — the original spec
+   research only checked geminicli.com/docs/reference/commands, a
+   different, less complete page that doesn't document it.
+   `geminiAdapter.remove()` implements it.
 2a. *Resolved*: OpenCode is a symlink adapter, not native-marketplace (see
     **Symlink adapters**) — `remove` is the ordinary `unlinkChildren` path,
     no CLI uninstall verb needed at all. The `opencode plugin <module>`
