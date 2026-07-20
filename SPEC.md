@@ -59,8 +59,8 @@ per agent, does whichever of the two things is correct for that agent:
   not required for v1 (see Open Questions).
 - **Test runner**: Bun's built-in test runner (`bun:test`) — no separate test
   framework dependency needed.
-- **CLI framework**: TBD in Plan phase (e.g. `commander` or hand-rolled with
-  `Bun.argv`) — not a spec-level decision.
+- **CLI framework**: hand-rolled with `Bun.argv` — no framework dependency
+  was adopted (see Open Question #7).
 
 ## Commands
 
@@ -275,7 +275,7 @@ src/
     claude-code.ts       → native-marketplace adapter
     codex.ts               → native-marketplace adapter
     gemini.ts                → native-marketplace adapter
-    grok.ts                      → native-marketplace adapter (arg format TBD, see Open Questions)
+    grok.ts                      → native-marketplace adapter (arg format not primary-source-confirmed, see Open Questions #2c)
     cursor.ts
     windsurf.ts
     kiro.ts
@@ -405,9 +405,13 @@ per-agent filenames themselves:
 | Agent | Global | Project | Status |
 |---|---|---|---|
 | Claude Code | `~/.claude/CLAUDE.md` | `<project>/CLAUDE.md` | confirmed (code.claude.com/docs/en/memory) |
-| Gemini CLI | `~/.gemini/GEMINI.md` | `<project>/GEMINI.md` | global confirmed; project assumed by symmetry, verify |
+| Gemini CLI | `~/.gemini/GEMINI.md` | `<project>/GEMINI.md` | global confirmed directly; project confirmed indirectly (geminicli.com/docs/cli/gemini-md/ describes a workspace-and-parent-directories search, not one fixed path, but a project root is unambiguously in scope) |
 | OpenCode | `~/.config/opencode/AGENTS.md` | `<project>/AGENTS.md` | confirmed (opencode.ai/docs/rules/) — project path coincides with the generic fallback below |
-| Codex, Grok, Cursor, Windsurf, Kiro | — | — | unconfirmed, research during Plan phase (see Open Questions) |
+| Codex | `~/AGENTS.md` | `<project>/AGENTS.md` | project confirmed (learn.chatgpt.com/docs/codex/cli — `/init` scaffolds one); global not documented, value shown is just the fallback's |
+| Cursor | — | `<project>/AGENTS.md` | confirmed (cursor.com/docs/context/rules) — no global file exists at all (User Rules are UI/database-managed); moot in practice anyway since `cursorAdapter` has no `globalRoot`, so global scope never reaches a contextFile |
+| Windsurf | `~/.codeium/windsurf/memories/global_rules.md` | `<project>/AGENTS.md` | global confirmed (docs.devin.ai/desktop/cascade/memories); no current single-file project convention confirmed (`.windsurfrules` is documented as legacy) — same "moot in practice" note as Cursor, `windsurfAdapter` has no `globalRoot` either |
+| Kiro | `~/.kiro/steering/AGENTS.md` | `<project>/AGENTS.md` | both confirmed (kiro.dev/docs/steering/) — and, unlike Cursor/Windsurf, actually reachable: `kiroAdapter` has a real `globalRoot` |
+| Grok | — | — | checked again for this task (docs.x.ai/build/cli/reference) — documents a `grok memory clear` subcommand but no filename/path convention; stays genuinely unconfirmed, falls back to `AGENTS.md` |
 | generic `.agents` fallback | `~/AGENTS.md` | `<project>/AGENTS.md` | maui's own convention, always available as the fallback `contextFile` when an adapter has no known one |
 
 Note Claude Code explicitly does **not** read `AGENTS.md` on its own — if a
@@ -852,11 +856,12 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
    `Bun.argv`-based parsing already implemented throughout
    `src/cli/index.ts` (`parseInstallArgs`, `parseRemoveArgs`,
    `parseNameAndAgentArgs`, etc.) **is** the decision, not a placeholder.
-8. `contextFile` conventions for Codex, Grok, Cursor, Windsurf, and Kiro are
-   unconfirmed — research each during the Plan phase alongside Open
-   Question #1's folder-convention research. (OpenCode's is now confirmed —
-   see the table above.) Also confirm Gemini's
-   project-scope `<project>/GEMINI.md` (only the global path was verified).
-   Until confirmed, those adapters' `postinstall` context should fall back
-   to the generic `.agents` convention's `contextFile`
-   (`AGENTS.md`) rather than guessing a tool-specific filename.
+8. *Resolved*, mostly: Codex, Cursor, Windsurf, and Kiro's `contextFile`
+   conventions are now confirmed — see the table above for each and its
+   citation. Gemini's project-scope `<project>/GEMINI.md` is now confirmed
+   too, indirectly (the CLI documents a workspace-and-parent-directories
+   search rather than one fixed path). The one piece that stays genuinely
+   open: **Grok's** convention — checked again against
+   docs.x.ai/build/cli/reference, which documents a `grok memory clear`
+   subcommand but no filename/path, so it stays on the generic `.agents`
+   convention's `AGENTS.md` fallback rather than a guess.

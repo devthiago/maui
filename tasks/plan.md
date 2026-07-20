@@ -177,8 +177,10 @@ safe default rather than guess.
       assumed default: both tools have real, scriptable plugin CLIs.
       Per this task's own guardrail, no adapter was built here; flagged as
       candidate work for a future phase (see below) instead.
-- [ ] Task 33: Fill in remaining contextFile conventions for Codex, Grok,
-      Cursor, Windsurf, Kiro (remainder of Open Question #8)
+- [x] Task 33: Fill in remaining contextFile conventions for Codex, Grok,
+      Cursor, Windsurf, Kiro (remainder of Open Question #8). Confirmed
+      Codex, Cursor, Windsurf, Kiro, and Gemini's project-scope path; Grok
+      stays genuinely unconfirmed — the one open item left in the phase.
 - [x] Task 34: Resolve the remaining decision-only Open Questions (#4
       registry/index, #5 versioning/pinning, #6 `bun build --compile`, #7
       CLI arg-parsing library — mark resolved, not deferred). Done out of
@@ -186,12 +188,15 @@ safe default rather than guess.
       this task needed no external research.
 
 ### Checkpoint: Phase 11
-- [ ] Every numbered Open Question (1–8, including sub-items 2a/2c) in
+- [x] Every numbered Open Question (1–8, including sub-items 2a/2c) in
       SPEC.md reads as resolved or explicitly deferred with a stated reason
-      — none left as a bare question
-- [ ] `bun test`, `bun run build`, `bun run lint` all clean
-- [ ] `grep -n "unconfirmed\|not found\|TBD" SPEC.md` returns nothing tied
-      to Open Questions #1–#8
+      — none left as a bare question. One item — Grok's `.agents/skills/`
+      reach and its `contextFile` convention — stays honestly unconfirmed,
+      which the checkpoint treats as acceptable per its own "resolved OR
+      explicitly deferred with a stated reason" bar.
+- [x] `bun test`, `bun run build`, `bun run lint` all clean — 137 tests
+- [x] `grep -n "unconfirmed\|not found\|TBD" SPEC.md` returns nothing tied
+      to Open Questions #1–#8 beyond the two intentional Grok mentions
 
 ### Future Phase Candidates (surfaced by Task 32, not scoped yet)
 

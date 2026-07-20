@@ -39,7 +39,7 @@ describe("resolveContextFile", () => {
   });
 
   it("falls back to AGENTS.md for an adapter with no confirmed convention", () => {
-    expect(resolveContextFile("codex", "global", { home: "/home/user" })).toBe(
+    expect(resolveContextFile("grok", "global", { home: "/home/user" })).toBe(
       "/home/user/AGENTS.md"
     );
     expect(resolveContextFile("some-unknown-agent", "global", { home: "/home/user" })).toBe(
@@ -49,7 +49,43 @@ describe("resolveContextFile", () => {
 
   it("falls back to AGENTS.md at project scope too", () => {
     expect(
+      resolveContextFile("grok", "project", { home: "/home/user", projectRoot: "/repo" })
+    ).toBe("/repo/AGENTS.md");
+  });
+
+  it("resolves codex project scope to <project>/AGENTS.md (confirmed, same value as the fallback)", () => {
+    expect(
       resolveContextFile("codex", "project", { home: "/home/user", projectRoot: "/repo" })
+    ).toBe("/repo/AGENTS.md");
+  });
+
+  it("resolves cursor project scope to <project>/AGENTS.md (confirmed alternative to .cursor/rules/)", () => {
+    expect(
+      resolveContextFile("cursor", "project", { home: "/home/user", projectRoot: "/repo" })
+    ).toBe("/repo/AGENTS.md");
+  });
+
+  it("resolves windsurf global scope to the confirmed ~/.codeium/windsurf/memories/global_rules.md", () => {
+    expect(resolveContextFile("windsurf", "global", { home: "/home/user" })).toBe(
+      "/home/user/.codeium/windsurf/memories/global_rules.md"
+    );
+  });
+
+  it("resolves windsurf project scope to <project>/AGENTS.md (no current single-file convention confirmed; .windsurfrules is legacy)", () => {
+    expect(
+      resolveContextFile("windsurf", "project", { home: "/home/user", projectRoot: "/repo" })
+    ).toBe("/repo/AGENTS.md");
+  });
+
+  it("resolves kiro global scope to the confirmed ~/.kiro/steering/AGENTS.md", () => {
+    expect(resolveContextFile("kiro", "global", { home: "/home/user" })).toBe(
+      "/home/user/.kiro/steering/AGENTS.md"
+    );
+  });
+
+  it("resolves kiro project scope to <project>/AGENTS.md", () => {
+    expect(
+      resolveContextFile("kiro", "project", { home: "/home/user", projectRoot: "/repo" })
     ).toBe("/repo/AGENTS.md");
   });
 });

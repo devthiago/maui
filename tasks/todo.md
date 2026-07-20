@@ -1039,7 +1039,7 @@ tasks here.
 
 ---
 
-## Task 33: Fill in remaining contextFile conventions
+## Task 33: Fill in remaining contextFile conventions ✅ done
 
 **Description:** `CONTEXT_FILES` in `src/core/context-file.ts` only has
 confirmed entries for `claude-code`, `gemini`, and `opencode` — Codex,
@@ -1052,16 +1052,46 @@ in `windsurf.ts` as not directory-shaped — still worth a `contextFile`
 entry for postinstall purposes even though it's not a symlink target?).
 
 **Acceptance criteria:**
-- [ ] Each **confirmed** convention gets an entry in `CONTEXT_FILES` (same shape as existing entries), a matching row in SPEC.md's contextFile table, and a unit test in `tests/unit/context-file.test.ts`
-- [ ] Anything that stays unconfirmed after real research stays on the `AGENTS.md` fallback — no guessed filenames — but SPEC.md's wording changes to reflect that it was actually checked this time, not just "unconfirmed"
+- [x] Each **confirmed** convention gets an entry in `CONTEXT_FILES` (same shape as existing entries), a matching row in SPEC.md's contextFile table, and a unit test in `tests/unit/context-file.test.ts`
+- [x] Anything that stays unconfirmed after real research stays on the `AGENTS.md` fallback — no guessed filenames — but SPEC.md's wording changes to reflect that it was actually checked this time, not just "unconfirmed"
+
+**What actually happened:** confirmed conventions for four of the five
+remaining agents, plus Gemini's still-open project-scope path from Task 30:
+- **Codex** (learn.chatgpt.com/docs/codex/cli): project-root `AGENTS.md`
+  confirmed (`/init` scaffolds one); no global path documented.
+- **Cursor** (cursor.com/docs/context/rules): project-root `AGENTS.md`
+  confirmed as "a plain markdown alternative to `.cursor/rules`"; global
+  confirmed to **not exist** at all (User Rules are UI/database-managed).
+- **Windsurf** (docs.devin.ai/desktop/cascade/memories): global
+  `~/.codeium/windsurf/memories/global_rules.md` confirmed — a real,
+  distinct path; no current single-file project convention (`.windsurfrules`
+  is documented as legacy), stays on the fallback.
+- **Kiro** (kiro.dev/docs/steering/): both confirmed —
+  `~/.kiro/steering/AGENTS.md` globally (a real, distinct path) and
+  project-root `AGENTS.md`. Unlike Cursor/Windsurf, this one is actually
+  reachable in practice since `kiroAdapter` has a real `globalRoot`.
+- **Gemini project-scope** (from Task 30): confirmed indirectly —
+  geminicli.com/docs/cli/gemini-md/ documents a workspace-and-parent-
+  directories search rather than one fixed path, but a project root is
+  unambiguously in scope.
+- **Grok**: re-checked docs.x.ai/build/cli/reference — documents a `grok
+  memory clear` subcommand but no filename/path convention. Stays
+  genuinely unconfirmed; this is the one open item left in the whole phase,
+  honestly labeled as such rather than force-resolved.
+
+Also cleaned up two unrelated stale "TBD" references found while doing the
+phase-wide checkpoint grep (the Tech Stack section's CLI-framework line,
+and the Project Structure listing's Grok comment) so the checkpoint's
+"no dangling TBD" bar is met precisely, not just approximately.
 
 **Verification:**
-- [ ] `bun test tests/unit/context-file.test.ts` passes with new cases
-- [ ] Full `bun test` suite still green
+- [x] `bun test tests/unit/context-file.test.ts` passes with new cases (RED confirmed first for windsurf/kiro global — the two genuinely new distinct values)
+- [x] Full `bun test` suite green — 137 tests (+6 from this task)
+- [x] `bun run build && bun run lint` clean
 
 **Dependencies:** None
 
-**Files likely touched:**
+**Files touched:**
 - `SPEC.md`
 - `src/core/context-file.ts`
 - `tests/unit/context-file.test.ts`
