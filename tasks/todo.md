@@ -72,32 +72,43 @@ dir.
 
 ---
 
-## Task 47: `maui update` — dedupe by `sourceRepo`
+## Task 47: `maui update` — dedupe by `sourceRepo` ✅ done
 
-**Description:** `updatePlugin(name)` (`src/cli/update.ts`) currently calls
-`fetchPlugin(entry.source, home)` directly; switch it to resolve
-`entry.sourceRepo` (via Task 36's `resolvePluginCacheDir`) and call
-`fetchSource` once for that cache dir. `runUpdate`'s bare-args path
-(`src/cli/index.ts:185-192`) currently loops every registry key and calls
-`updatePlugin(name)` unconditionally — once N plugins share one clone this
-re-fetches the same repo N times. Fix: group registry entries by
-`sourceRepo` first, refresh once per distinct group, then report every
-plugin name that benefited from that one refresh.
+**Description:** `updatePlugin(name)` (`src/cli/update.ts`) is unchanged in
+shape, now using an injectable `fetchImpl` (defaults to the real
+`fetchSource`) purely for test observability. New `updateAll(options)`
+handles the bare `maui update` case: groups registry entries by
+`resolvePluginCacheDir(entry, home)` (Task 36) and calls `fetchImpl` once
+per distinct cache dir, not once per plugin name, then reports every
+plugin name as `refreshed` regardless of which specific call triggered the
+shared refresh. `runUpdate` in `src/cli/index.ts` now calls `updatePlugin`
+(named) or `updateAll` (bare) instead of looping registry keys itself.
 
 **Acceptance criteria:**
-- [ ] `maui update <name>` on a marketplace-shared plugin refreshes the one shared clone; a sibling plugin's symlinks still resolve with no relink step (existing guarantee, now proven across siblings)
-- [ ] `maui update` (bare) with 2 plugins sharing one `sourceRepo` triggers exactly one fetch/copy operation, reported against both plugin names
-- [ ] `maui update` (bare) with 2 unrelated single-plugin sources still triggers 2 separate operations (regression)
+- [x] `maui update <name>` on a marketplace-shared plugin refreshes the one shared clone; a sibling plugin's symlinks still resolve with no relink step (existing guarantee, now proven across siblings)
+- [x] `maui update` (bare) with 2 plugins sharing one `sourceRepo` triggers exactly one fetch/copy operation, reported against both plugin names
+- [x] `maui update` (bare) with 2 unrelated single-plugin sources still triggers 2 separate operations (regression)
+
+**What actually happened — counting the dedup black-box:** proving "exactly
+one fetch call" without instrumentation is hard for a copy-based fetch
+(re-copying identical content is indistinguishable from copying it once).
+Rather than introduce module-mocking (`bun:test`'s `mock.module`, unused
+anywhere else in this codebase) added a minimal, explicit `fetchImpl?`
+injection point on `UpdateOptions` — the same "inject a callback for test
+observability" shape already used by `InstallOptions.confirm`/
+`RemoveOptions.confirmPurge` — so tests can wrap the real `fetchSource` in
+a counting closure without new test infrastructure.
 
 **Verification:**
-- [ ] `bun test tests/integration/update.test.ts` (extended)
+- [x] `bun test tests/integration/update-marketplace.test.ts` (new) + existing `tests/integration/update.test.ts` unchanged/passing
+- [x] Full suite/build/lint green
 
 **Dependencies:** Task 38, Task 40
 
-**Files likely touched:**
-- `src/cli/update.ts`
-- `src/cli/index.ts`
-- `tests/integration/update.test.ts`
+**Files touched:**
+- `src/cli/update.ts` (`updateAll`, `fetchImpl` injection, shared `computeHints` helper)
+- `src/cli/index.ts` (`runUpdate` delegates to `updatePlugin`/`updateAll`, no longer loops `readRegistry()` itself)
+- `tests/integration/update-marketplace.test.ts` (new)
 
 **Estimated scope:** Medium
 

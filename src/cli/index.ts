@@ -6,8 +6,7 @@ import { removePlugin } from "./remove";
 import { linkPlugin } from "./link";
 import { unlinkPlugin } from "./unlink";
 import { create, createMarketplace, createPlugin } from "./create";
-import { updatePlugin } from "./update";
-import { readRegistry } from "../core/registry";
+import { updatePlugin, updateAll } from "./update";
 
 export interface CliResult {
   code: number;
@@ -206,14 +205,13 @@ async function runUpdate(args: string[]): Promise<CliResult> {
   const name = args.find((arg) => !arg.startsWith("--"));
 
   try {
-    const names = name ? [name] : Object.keys((await readRegistry()).plugins);
-    if (names.length === 0) {
+    const results = name ? [await updatePlugin(name)] : await updateAll();
+    if (results.length === 0) {
       return { code: 0, stdout: "No plugins installed." };
     }
 
     const lines: string[] = [];
-    for (const pluginName of names) {
-      const result = await updatePlugin(pluginName);
+    for (const result of results) {
       const status = result.refreshed ? "refreshed" : "no symlink-cached agents to refresh";
       lines.push(`Updated ${result.pluginName} (${status})`);
       if (result.nativeAgentHints.length > 0) {

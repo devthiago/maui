@@ -310,7 +310,7 @@ close, not just extend around:
 - [x] Removing one of two Gemini-shared plugins does not call `gemini extensions uninstall`; removing the last one does
 - [x] A single-plugin Grok source still uses the unchanged direct-git path (regression)
 
-- [ ] Task 47: `maui update` — dedupe by `sourceRepo` for both `update <name>` and bare `update`
+- [x] Task 47: `maui update` — dedupe by `sourceRepo` for both `update <name>` and bare `update` (new `updateAll`, `fetchImpl` injection for test observability rather than module-mocking)
 - [ ] Task 48: `maui remove --purge` — fix the cache-dir-key bug + sibling-check before deleting a shared clone
 - [ ] Task 49: `create-plugin` marketplace mode generates a per-plugin `maui.json`
 
