@@ -302,7 +302,7 @@ close, not just extend around:
 - [x] Task 42: `installsWholeMarketplace` dedup mechanism (install + remove), built against a fake test-double adapter
 - [x] Task 43: Gemini marketplace-mode (`installsWholeMarketplace: true`) — also fixed a real bug: `identity.pluginName` must resolve to the marketplace's own name for whole-marketplace adapters, not each plugin's name, or `uninstall` would target a nonexistent extension
 - [x] Task 44: Grok marketplace-mode branching (`sourceMode` plumbing + direct-git vs. marketplace-add)
-- [ ] Task 45: Codex research — confirm or deny a per-plugin selection flag (Open Question #9), update SPEC.md either way
+- [x] Task 45: Codex research — confirm or deny a per-plugin selection flag (Open Question #9), update SPEC.md either way — **confirmed** Codex supports genuine per-plugin selection via a direct-path `--plugin` flag, overturning the plan's "likely whole-repo-only" assumption; Task 46 implements normal per-plugin wiring, not `installsWholeMarketplace`
 - [ ] Task 46: Codex marketplace-mode wiring per Task 45's finding
 
 ### Checkpoint: Phase 14 (native-marketplace adapters)

@@ -134,7 +134,7 @@ shape).
 
 ---
 
-## Task 45: Codex research — confirm or deny a per-plugin selection flag (Open Question #9)
+## Task 45: Codex research — confirm or deny a per-plugin selection flag (Open Question #9) ✅ done
 
 **Description:** Pure research, no code. Check codex-marketplace.com/docs
 and `npx codex-marketplace --help`/`add --help` for a documented way to
@@ -146,15 +146,28 @@ unconfirmed" if that's the honest outcome, per this project's standing
 research-before-implementing discipline (Tasks 29–35).
 
 **Acceptance criteria:**
-- [ ] Open Question #9 in SPEC.md updated to either a confirmed flag shape or an explicit "unconfirmed, adopting the safe default" decision — never left as a bare question
-- [ ] No code changes in this task
+- [x] Open Question #9 in SPEC.md updated to either a confirmed flag shape or an explicit "unconfirmed, adopting the safe default" decision — never left as a bare question
+- [x] No code changes in this task
+
+**What actually happened — plan's assumption overturned:** confirmed (fetched
+codex-marketplace.com/docs twice via WebFetch, consistent both times, plus
+corroborated via WebSearch hitting the same primary source) that Codex
+**does** support genuine per-plugin selection, contrary to the plan's "most
+likely no per-plugin flag exists" assumption. The mechanism differs from
+Claude's `<name>@<marketplace>` qualifier: `codex-marketplace`'s singular
+`--plugin` flag takes a **direct repository path to the one plugin**
+(`add <owner>/<repo>/plugins/<plugin-name> --plugin`), not a name argument
+alongside the repo. This means Task 46 implements normal per-plugin wiring
+(Claude/Grok's shape), **not** `installsWholeMarketplace` (Gemini's shape) —
+a real correction to the plan, caught by doing the research before writing
+adapter code, exactly the point of scoping this as its own task.
 
 **Verification:**
-- [ ] Manual diff review of SPEC.md
+- [x] Manual diff review of SPEC.md — Open Question #9 marked *Resolved*, Codex bullet in "Native-marketplace adapters" rewritten with the confirmed command shape
 
-**Dependencies:** None — can run any time, ideally before Task 46
+**Dependencies:** None
 
-**Files likely touched:**
+**Files touched:**
 - `SPEC.md`
 
 **Estimated scope:** Small

@@ -662,12 +662,20 @@ per-plugin, unchanged in shape from the v1 model.
   already-known marketplace). The only change from the single-plugin case
   is that "which name(s)" now comes from the selection step above instead
   of always being the source's single `maui.json` name.
-- **Codex CLI**: same shared marketplace-add-then-install-by-name shape
-  via `codex-marketplace`; the exact flag for selecting one plugin by name
-  out of a multi-plugin repo isn't yet confirmed from
-  codex-marketplace.com/docs (today's spec only documents the whole-repo
-  `--plugin` flag) — verify during Plan/Implement phase, same discipline
-  as Tasks 13–18 (see Open Questions).
+- **Codex CLI**: genuine per-plugin selection is confirmed, via a
+  different mechanism than Claude's `<name>@<marketplace>` qualifier —
+  `codex-marketplace`'s singular `--plugin` flag takes a **direct
+  repository path to the one plugin**, not a separate name argument:
+  `npx codex-marketplace add <owner>/<repo>/plugins/<plugin-name>
+  --plugin [--global|--project]`, confirmed at codex-marketplace.com/docs
+  ("Use singular flags only with a direct repository path such as
+  `owner/repo/plugins/name`... plural flags only crawl the matching
+  top-level folder"). This is distinct from the whole-repo crawl
+  (`add <owner>/<repo> --plugins`, plural, already documented) used for
+  single-plugin repos today. Remove uses the same per-plugin identity
+  (`codex-marketplace remove <plugin> [--global|--project]`, unchanged).
+  No `installsWholeMarketplace` flag needed — Codex is a normal per-plugin
+  adapter like Claude Code, not a whole-repo one like Gemini.
 - **Gemini CLI**: no per-plugin concept exists at all (confirmed in
   **Plugin Scaffolding** — `gemini extensions install` installs the
   entire repo as one extension). Gemini is exempt from the selection
@@ -1022,11 +1030,13 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
    docs.x.ai/build/cli/reference, which documents a `grok memory clear`
    subcommand but no filename/path, so it stays on the generic `.agents`
    convention's `AGENTS.md` fallback rather than a guess.
-9. *Open*: `codex-marketplace`'s exact flag for installing one named plugin
-   out of a multi-plugin marketplace (as opposed to its documented
-   whole-repo `--plugin` flag) isn't confirmed from
-   codex-marketplace.com/docs — needed for **Multi-Plugin Marketplace
-   Install & Removal**'s Codex CLI behavior. Verify against real
-   `--help` output/docs before implementing that adapter's marketplace-mode
-   install path; fall back to installing the whole repo (with a loud
-   warning) if no per-plugin flag can be confirmed.
+9. *Resolved*: `codex-marketplace`'s exact flag for installing one named
+   plugin out of a multi-plugin marketplace is confirmed at
+   codex-marketplace.com/docs (fetched twice, consistent both times, plus
+   corroborated via a separate search hitting the same primary source):
+   `npx codex-marketplace add <owner>/<repo>/plugins/<plugin-name>
+   --plugin` — the singular `--plugin` flag takes a **direct path to the
+   one plugin**, not a name argument alongside the repo, distinct from the
+   whole-repo-crawling plural `--plugins` flag already documented. No
+   fallback-to-whole-repo behavior needed — see **Native-marketplace
+   adapters**' Codex bullet for the implemented shape.
