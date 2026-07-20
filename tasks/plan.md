@@ -311,7 +311,7 @@ close, not just extend around:
 - [x] A single-plugin Grok source still uses the unchanged direct-git path (regression)
 
 - [x] Task 47: `maui update` — dedupe by `sourceRepo` for both `update <name>` and bare `update` (new `updateAll`, `fetchImpl` injection for test observability rather than module-mocking)
-- [ ] Task 48: `maui remove --purge` — fix the cache-dir-key bug + sibling-check before deleting a shared clone
+- [x] Task 48: `maui remove --purge` — fix the cache-dir-key bug + sibling-check before deleting a shared clone (`removePlugin` now returns a `RemoveResult` instead of `void` so the "why" is reportable)
 - [ ] Task 49: `create-plugin` marketplace mode generates a per-plugin `maui.json`
 
 ### Checkpoint: Phase 12 (final)

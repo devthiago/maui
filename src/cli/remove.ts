@@ -1,9 +1,12 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
 import { rm } from "node:fs/promises";
-import { readRegistry, writeRegistry } from "../core/registry";
+import {
+  readRegistry,
+  writeRegistry,
+  resolvePluginCacheDir,
+  hasSiblingSharingCacheDir,
+} from "../core/registry";
 import { unlinkChildren } from "../core/linker";
-import { pluginsRoot } from "../core/fetch";
 import { PluginNotFoundError } from "../core/errors";
 import { getNativeMarketplaceAdapter } from "../adapters/registry";
 import { stripBlock } from "../core/postinstall";
@@ -19,11 +22,19 @@ export interface RemoveOptions {
   confirmPurge?: (name: string) => Promise<boolean>;
 }
 
+export interface RemoveResult {
+  pluginName: string;
+  purged: boolean;
+  /** Set only when `--purge` was requested but skipped — e.g. a sibling
+   * plugin from the same marketplace source still references the cache. */
+  purgeSkipped?: string;
+}
+
 function defaultConfirmPurge(name: string): Promise<boolean> {
   return confirmLine(`Plugin "${name}" is still linked to other agents. Purge its cached source anyway?`);
 }
 
-export async function removePlugin(name: string, options: RemoveOptions = {}): Promise<void> {
+export async function removePlugin(name: string, options: RemoveOptions = {}): Promise<RemoveResult> {
   const home = options.home ?? homedir();
   const registry = await readRegistry(home);
   const entry = registry.plugins[name];
@@ -75,8 +86,21 @@ export async function removePlugin(name: string, options: RemoveOptions = {}): P
     if (stillLinkedElsewhere) {
       const confirm = options.confirmPurge ?? defaultConfirmPurge;
       const confirmed = await confirm(name);
-      if (!confirmed) return;
+      if (!confirmed) return { pluginName: name, purged: false };
     }
-    await rm(join(pluginsRoot(home), name), { recursive: true, force: true });
+
+    if (hasSiblingSharingCacheDir(registry, name, entry.sourceRepo)) {
+      return {
+        pluginName: name,
+        purged: false,
+        purgeSkipped:
+          "cached source is still shared by another installed plugin from the same marketplace — not deleted",
+      };
+    }
+
+    await rm(resolvePluginCacheDir(entry, home), { recursive: true, force: true });
+    return { pluginName: name, purged: true };
   }
+
+  return { pluginName: name, purged: false };
 }

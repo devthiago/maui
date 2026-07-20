@@ -108,8 +108,16 @@ async function runRemove(args: string[]): Promise<CliResult> {
   }
 
   try {
-    await removePlugin(name, { agents, purge });
-    return { code: 0, stdout: `Removed ${name}` };
+    const result = await removePlugin(name, { agents, purge });
+    const lines = [`Removed ${name}`];
+    if (purge) {
+      if (result.purged) {
+        lines.push("Purged cached source.");
+      } else if (result.purgeSkipped) {
+        lines.push(`Purge skipped: ${result.purgeSkipped}`);
+      }
+    }
+    return { code: 0, stdout: lines.join("\n") };
   } catch (error) {
     return { code: 1, stderr: `maui remove: ${(error as Error).message}` };
   }

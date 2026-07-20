@@ -38,7 +38,7 @@ bumps.
 
 ---
 
-## Task 48: `maui remove --purge` — fix cache-dir key bug + sibling-check
+## Task 48: `maui remove --purge` — fix cache-dir key bug + sibling-check ✅ done
 
 **Description:** `removePlugin`'s purge branch (`src/cli/remove.ts:73`) does
 `rm(join(pluginsRoot(home), name), ...)` — keyed by the plugin's own
@@ -55,18 +55,23 @@ proceed to delete when this plugin is the last one referencing that cache
 dir.
 
 **Acceptance criteria:**
-- [ ] Purging a marketplace-mode plugin whose siblings are still installed leaves the shared clone on disk, with a clear message explaining why
-- [ ] Purging the last plugin referencing a shared clone actually deletes it — assert the directory is gone, not just that `rm` didn't throw (proves the bug is fixed)
-- [ ] Purging a single-plugin (non-marketplace) install is unchanged from today (regression)
+- [x] Purging a marketplace-mode plugin whose siblings are still installed leaves the shared clone on disk, with a clear message explaining why
+- [x] Purging the last plugin referencing a shared clone actually deletes it — assert the directory is gone, not just that `rm` didn't throw (proves the bug is fixed)
+- [x] Purging a single-plugin (non-marketplace) install is unchanged from today (regression) — existing `tests/integration/remove.test.ts` passes unmodified
+
+**What actually happened:** `removePlugin`'s return type changed from `Promise<void>` to `Promise<RemoveResult>` (`{pluginName, purged, purgeSkipped?}`) to carry the "why" message the plan's acceptance criteria required — a safe, backward-compatible change since no existing caller (test or `runRemove`) checked the previous `void` return. `runRemove` in `src/cli/index.ts` now prints "Purged cached source."/"Purge skipped: ..." accordingly.
 
 **Verification:**
-- [ ] `bun test tests/integration/remove.test.ts` (extended)
+- [x] `bun test tests/integration/remove-marketplace.test.ts` (new) + existing `tests/integration/remove.test.ts` unchanged/passing
+- [x] Full suite/build/lint green
 
 **Dependencies:** Task 36, Task 40
 
-**Files likely touched:**
-- `src/cli/remove.ts`
-- `tests/integration/remove.test.ts`
+**Files touched:**
+- `src/core/registry.ts` (`hasSiblingSharingCacheDir`)
+- `src/cli/remove.ts` (`RemoveResult` return type, purge fix + sibling-check)
+- `src/cli/index.ts` (`runRemove` surfaces the purge outcome message)
+- `tests/integration/remove-marketplace.test.ts` (new)
 
 **Estimated scope:** Medium
 
