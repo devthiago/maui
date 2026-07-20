@@ -321,7 +321,7 @@ starting Task 41.
 
 ---
 
-## Task 39: Plugin selection — interactive prompt + `--plugin`/`--all-plugins` + hard error
+## Task 39: Plugin selection — interactive prompt + `--plugin`/`--all-plugins` + hard error ✅ done
 
 **Description:** New function, e.g. `selectPlugins(catalog, options)` in
 `src/core/plugin-selection.ts`, taking the marketplace `catalog` from Task
@@ -337,21 +337,21 @@ the project's "explicit error types over generic Error" style from
 `core/errors.ts`).
 
 **Acceptance criteria:**
-- [ ] `--plugin a --plugin b` selects exactly `["a", "b"]`, no prompt invoked, regardless of `isTTY`
-- [ ] `--all-plugins` selects every catalog entry, no prompt invoked
-- [ ] No flags + `isTTY: true` + injected prompt returning `"1,3"` selects the 1st and 3rd catalog entries; `"all"` selects everything
-- [ ] No flags + `isTTY: false` throws `PluginSelectionRequiredError` whose message lists every catalog plugin name
-- [ ] Invalid numeric input (out of range, non-numeric) in interactive mode re-prompts or errors clearly, doesn't silently install nothing
+- [x] `--plugin a --plugin b` selects exactly `["a", "b"]`, no prompt invoked, regardless of `isTTY`
+- [x] `--all-plugins` selects every catalog entry, no prompt invoked
+- [x] No flags + `isTTY: true` + injected prompt returning `"1,3"` selects the 1st and 3rd catalog entries; `"all"` selects everything
+- [x] No flags + `isTTY: false` throws `PluginSelectionRequiredError` whose message lists every catalog plugin name
+- [x] Invalid numeric input (out of range, non-numeric) in interactive mode errors clearly via `InvalidPluginSelectionError`, doesn't silently install nothing
 
 **Verification:**
-- [ ] `bun test tests/unit/plugin-selection.test.ts`
+- [x] `bun test tests/unit/plugin-selection.test.ts`
 
-**Dependencies:** None (only needs a catalog shape — can be built against a hand-written fixture ahead of Task 38 if desired)
+**Dependencies:** None
 
-**Files likely touched:**
-- `src/core/plugin-selection.ts` (new)
-- `src/core/errors.ts` (add `PluginSelectionRequiredError`)
+**Files touched:**
+- `src/core/plugin-selection.ts` (new — `PluginSelectionRequiredError`/`InvalidPluginSelectionError` live here, not `core/errors.ts`, to keep selection-specific errors colocated with the selection logic)
 - `tests/unit/plugin-selection.test.ts` (new)
+- `src/core/source-mode.ts` (unrelated `tsc --noEmit` fix caught while running lint for this task — `noUncheckedIndexedAccess` flagged `match[1]`)
 
 **Estimated scope:** Medium
 

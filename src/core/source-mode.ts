@@ -78,7 +78,7 @@ export async function detectSourceMode(rootDir: string): Promise<SourceMode> {
     catalog.push({
       name: pluginName,
       description: typeof description === "string" ? description : undefined,
-      pluginPath: match[1],
+      pluginPath: match[1]!,
     });
   }
 

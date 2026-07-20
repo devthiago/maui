@@ -289,7 +289,7 @@ close, not just extend around:
 - [x] `detectSourceMode` correctly classifies: maui.json-only; maui.json+marketplace.json (self-hosted); marketplace.json-only with `./plugins/<name>` entries; neither
 - [x] `fetchSource` on a single-plugin fixture produces a byte-identical cache dir to today's `fetchPlugin`
 
-- [ ] Task 39: Plugin selection — interactive prompt + `--plugin`/`--all-plugins` + hard error on no-TTY-no-flags
+- [x] Task 39: Plugin selection — interactive prompt + `--plugin`/`--all-plugins` + hard error on no-TTY-no-flags
 - [ ] Task 40: `installOnePlugin` extraction + `installMarketplace`/`installFromSource` + CLI wiring, proven against symlink targets only (`_default` + one real symlink adapter)
 
 ### Checkpoint: Phase 13 (walking skeleton)
