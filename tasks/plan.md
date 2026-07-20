@@ -282,7 +282,7 @@ close, not just extend around:
 
 - [x] Task 36: Registry schema — `sourceRepo` + `pluginPath`, backward-compat fallback
 - [x] Task 37: `detectSourceMode()` — single-plugin vs. marketplace detection (+ SPEC.md wording fix)
-- [ ] Task 38: `fetchSource()` — shared-cache-key rewrite of `fetchPlugin`, consuming Task 37
+- [x] Task 38: `fetchSource()` — shared-cache-key rewrite of `fetchPlugin`, consuming Task 37
 
 ### Checkpoint: Phase 12 (core primitives)
 - [ ] `bun test` passes with zero changes to any existing adapter/install/update/remove test

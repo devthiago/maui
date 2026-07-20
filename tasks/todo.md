@@ -357,7 +357,7 @@ the project's "explicit error types over generic Error" style from
 
 ---
 
-## Task 38: `fetchSource()` — cache-key rewrite consuming Task 37
+## Task 38: `fetchSource()` — cache-key rewrite consuming Task 37 ✅ done
 
 **Description:** Replace `fetchPlugin`'s hardcoded `manifest.name` cache key
 with mode-aware logic: clone/copy source into staging (unchanged), call
@@ -372,19 +372,19 @@ single-mode-only wrapper around `fetchSource` so existing call sites
 migrated in Tasks 40/47.
 
 **Acceptance criteria:**
-- [ ] Single-plugin fixture: `fetchSource` produces the same `cacheDir` path and contents as today's `fetchPlugin`
-- [ ] Marketplace fixture (root `marketplace.json` + `plugins/a/maui.json` + `plugins/b/maui.json`): `fetchSource` copies the whole repo once into `~/.maui/plugins/<marketplace-name>/`, and `FetchedSource.catalog` lists both `a` and `b` with correct `pluginPath`
-- [ ] Re-fetching the same marketplace source wipes and recopies the one shared dir (idempotent, matching today's single-plugin guarantee)
-- [ ] `fetchPlugin(source, home)` (existing signature) still passes every existing caller's test unchanged
+- [x] Single-plugin fixture: `fetchSource` produces the same `cacheDir` path and contents as today's `fetchPlugin`
+- [x] Marketplace fixture (root `marketplace.json` + `plugins/a/maui.json` + `plugins/b/maui.json`): `fetchSource` copies the whole repo once into `~/.maui/plugins/<marketplace-name>/`, and `FetchedSource.catalog` lists both `a` and `b` with correct `pluginPath`
+- [x] Re-fetching the same marketplace source wipes and recopies the one shared dir (idempotent, matching today's single-plugin guarantee)
+- [x] `fetchPlugin(source, home)` (existing signature) still passes every existing caller's test unchanged
 
 **Verification:**
-- [ ] `bun test tests/unit/fetch.test.ts` (extended) and full existing `tests/integration/install.test.ts` suite (regression)
+- [x] `bun test tests/integration/fetch.test.ts` (extended, actual location — not `tests/unit/`) and full suite regression
 
 **Dependencies:** Task 37
 
-**Files likely touched:**
+**Files touched:**
 - `src/core/fetch.ts`
-- `tests/unit/fetch.test.ts`
+- `tests/integration/fetch.test.ts`
 
 **Estimated scope:** Medium
 
