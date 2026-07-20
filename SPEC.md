@@ -783,11 +783,19 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
     Grok's skill loader reads `.agents/skills/` the way OpenCode's does —
     don't rely on the always-on `.agents` fallback reaching Grok until
     verified.
-3. Confirm the "self-hosted single-plugin marketplace" pattern (a repo
+3. *Resolved*: the "self-hosted single-plugin marketplace" pattern (a repo
    containing both `.claude-plugin/plugin.json` and a self-cataloging
-   `.claude-plugin/marketplace.json`) is actually valid for
-   `claude plugin marketplace add` — the scaffold in **Plugin Scaffolding**
-   depends on it.
+   `.claude-plugin/marketplace.json` with `plugins: [{ name, source: "." }]`)
+   is confirmed valid, directly by Claude Code's own docs
+   (code.claude.com/docs/en/plugin-marketplaces): the marketplace-validation
+   section explicitly calls out `source` of `"."` as a distinct, validated
+   value meaning "the plugin lives at the marketplace root" (Claude Code
+   v2.1.196+; earlier versions "skip plugins at the marketplace root and
+   only descend from a `.claude-plugin/marketplace.json`" — a version floor
+   worth knowing about, not a correctness problem). `source: "./"` is the
+   equivalent form used when multiple plugins share the marketplace root
+   (e.g. a shared `skills/` folder). No change needed to `scaffold.ts` —
+   its `source: "."` output was already correct.
 4. Should v1 ship with a small built-in registry/index of known-good
    symlink-adapter plugins, or is "any git URL with a `maui.json`"
    sufficient to start? (Spec assumes the latter.)

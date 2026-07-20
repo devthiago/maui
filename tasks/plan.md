@@ -160,9 +160,10 @@ Same discipline as Tasks 13–18: research the tool's real docs first, then
 implement; if a fact can't be confirmed, say so explicitly and pick the
 safe default rather than guess.
 
-- [ ] Task 29: Confirm Claude Code's self-hosted single-plugin marketplace
+- [x] Task 29: Confirm Claude Code's self-hosted single-plugin marketplace
       pattern (Open Question #3) — done first since `scaffold.ts`'s
-      already-shipped output depends on it
+      already-shipped output depends on it. Confirmed by Claude Code's own
+      docs: `source: "."` is correct as-is, no code change needed.
 - [ ] Task 30: Confirm Gemini's uninstall syntax + project-scope contextFile
       path (Open Question #2, part of #8)
 - [ ] Task 31: Confirm Grok CLI argument shapes (Open Question #2c)

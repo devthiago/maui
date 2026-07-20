@@ -866,7 +866,7 @@ what manual end-to-end verification is for.
 
 ---
 
-## Task 29: Confirm Claude Code's self-hosted single-plugin marketplace pattern
+## Task 29: Confirm Claude Code's self-hosted single-plugin marketplace pattern ✅ done
 
 **Description:** Independently verify, against Claude Code's own docs
 (code.claude.com/docs), that a repo can catalog itself for
@@ -884,17 +884,27 @@ wrong answer here means fixing already-shipped scaffold output.
 - [ ] No regression in the existing single-plugin / marketplace-mode scaffold tests
 
 **Verification:**
-- [ ] `bun test tests/integration/scaffold.test.ts` passes
-- [ ] `bun run build && bun run lint` clean
+- [x] `bun test tests/integration/scaffold.test.ts` passes
+- [x] `bun run build && bun run lint` clean
+
+**What actually happened:** confirmed correct on the first try — no code
+change needed. Claude Code's own marketplace-authoring docs
+(code.claude.com/docs/en/plugin-marketplaces) explicitly document
+`source: "."` as a distinct, validated value meaning "the plugin lives at
+the marketplace root" (its validator section literally says the per-entry
+validation pass "includes plugins whose `source` is `.`" as of v2.1.196).
+`scaffold.ts`'s `scaffoldStandalonePlugin` already emits exactly this.
+Noted one non-blocking fact for the record: earlier Claude Code versions
+"skip plugins at the marketplace root and only descend from a
+`.claude-plugin/marketplace.json`" — a version-floor consideration, not a
+correctness bug in the scaffold.
 
 **Dependencies:** None
 
-**Files likely touched:**
-- `SPEC.md`
-- `src/core/scaffold.ts`, `src/adapters/claude-code.ts` (only if the pattern is wrong)
-- `tests/integration/scaffold.test.ts` (only if the pattern is wrong)
+**Files touched:**
+- `SPEC.md` (Open Question #3 rewritten as resolved, with citation)
 
-**Estimated scope:** Small (research + doc update), Medium if the pattern turns out to be wrong
+**Estimated scope:** Small
 
 ---
 
