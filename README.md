@@ -2,7 +2,7 @@
   <img src="assets/maui-logo.png" alt="maui" width="500">
 </p>
 
-**🪝maui** stands for **M**ulti **A**gents **U**nique **I**nstall.
+**<span style="color:#C2A486">🪝maui</span>** stands for **M**ulti **A**gents **U**nique **I**nstall.
 
 **A global, multi-agent toolset installer.** One command installs a plugin's
 skills, agents, commands, rules, and hooks into whichever AI coding agents
@@ -37,12 +37,13 @@ machine. One manifest, one command.
 - [Using What You Scaffolded](#using-what-you-scaffolded)
 - [Files & Directories maui Manages](#files--directories-maui-manages)
 - [FAQ](#faq)
+- [Contributing](#contributing)
 
 ---
 
 ## Requirements
 
-maui is **Bun-only, deliberately**. Its CLI entrypoint requires the `bun`
+<span style="color:#C2A486">🪝maui</span>   is **Bun-only, deliberately**. Its CLI entrypoint requires the `bun`
 binary to run at all, and its core relies on Bun-native APIs (`Bun.file`,
 `Bun.write`, `Bun.which`, `Bun.$`) rather than Node equivalents — that's
 what keeps adapters and postinstall scripts small and dependency-free.
@@ -53,7 +54,7 @@ the ones it detects.
 
 ## Installation
 
-maui is **not published to the npm registry** — it's distributed straight
+<span style="color:#C2A486">🪝maui</span>   is **not published to the npm registry** — it's distributed straight
 from its GitHub repo using Bun's `github:` dependency specifier, which
 `bunx`/`bun add` resolve without touching npm at all.
 
@@ -100,11 +101,11 @@ maui create-plugin my-new-plugin
 
 ## How maui Works
 
-Every agent maui supports falls into exactly one of two categories, and
-maui treats them completely differently:
+Every agent <span style="color:#C2A486">🪝maui</span>   supports falls into exactly one of two categories, and
+<span style="color:#C2A486">🪝maui</span>   treats them completely differently:
 
 **Native-marketplace agents** (Claude Code, Codex CLI, Gemini CLI, Grok CLI)
-each ship their own plugin/extension manager. For these, maui never touches
+each ship their own plugin/extension manager. For these, <span style="color:#C2A486">🪝maui</span>   never touches
 a single file on disk — it shells out to that agent's own CLI
 (`claude plugin install`, `gemini extensions install`, and so on) and lets
 the agent manage its own cache, versioning, and enable/disable state
@@ -130,7 +131,7 @@ path by convention, on top of its own dedicated `.config/opencode/` target.
 
 **A failing agent never blocks the others.** If Claude Code is installed
 but the plugin hasn't been pushed to GitHub yet, `claude plugin install`
-will fail — maui catches that, reports it, and keeps going with every other
+will fail — <span style="color:#C2A486">🪝maui</span>   catches that, reports it, and keeps going with every other
 agent that *did* succeed, rather than aborting the whole install.
 
 **Global vs. project scope.** By default, everything installs globally
@@ -145,12 +146,12 @@ Native-marketplace agents don't support project scope yet — see the
 **Idempotent by design.** Installing the same plugin twice doesn't
 duplicate anything, re-fetching a plugin doesn't break existing symlinks
 (they point at a stable cache path, not the ever-changing source), and any
-pre-existing file maui would otherwise overwrite gets backed up first
+pre-existing file <span style="color:#C2A486">🪝maui</span>   would otherwise overwrite gets backed up first
 (`<name>.maui-backup-<timestamp>`) rather than silently destroyed.
 
 ## Supported Agents
 
-| Agent | Category | How maui installs |
+| Agent | Category | How <span style="color:#C2A486">🪝maui</span>   installs |
 |---|---|---|
 | **Claude Code** | Native-marketplace | `claude plugin marketplace add` + `claude plugin install` |
 | **Gemini CLI** | Native-marketplace | `gemini extensions install <github-url>` |
@@ -177,7 +178,7 @@ OpenCode is the one agent here that doesn't fit either box cleanly, so it's
 worth explaining on its own.
 
 Every other native-marketplace agent (Claude Code, Codex, Gemini, Grok) has
-a plugin system that closely mirrors maui's own model: a plugin is a bundle
+a plugin system that closely mirrors <span style="color:#C2A486">🪝maui</span>  's own model: a plugin is a bundle
 of skills/commands/rules that the agent's CLI fetches, installs, and
 manages. OpenCode has no such concept. Read literally, [OpenCode's
 "plugins"](https://opencode.ai/docs/plugins/) are event handlers — small
@@ -187,18 +188,18 @@ Code calls **hooks** (`PreToolUse`, `PostToolUse`, `Stop`, …) or what Codex
 exposes through its own hook mechanism. Skills, commands, and rules reach
 OpenCode through a completely separate, plain-folder convention
 (`.opencode/skills/`, `.opencode/commands/`, `.opencode/agents/`) — which is
-exactly why maui treats OpenCode as a **symlink agent**, not a
+exactly why <span style="color:#C2A486">🪝maui</span>   treats OpenCode as a **symlink agent**, not a
 native-marketplace one: there's no install CLI to shell out to, just files
 in folders, same as Cursor or Windsurf.
 
-So a maui plugin targeting OpenCode has two independent pieces, both
+So a <span style="color:#C2A486">🪝maui</span>   plugin targeting OpenCode has two independent pieces, both
 optional:
 
 1. **Files** (`skills/`, `commands/`, `agents/`, `rules/`) — declared in
    `maui.json`'s `opencode` target exactly like any other symlink agent,
    e.g. `"opencode": { "skills/": "skills/", "commands/": "commands/" }`.
 2. **Hooks** (`hooks/opencode-hooks.ts`) — a fixed-convention file `maui
-   create`/`create-plugin` scaffold for you. On install, maui symlinks it
+   create`/`create-plugin` scaffold for you. On install, <span style="color:#C2A486">🪝maui</span>   symlinks it
    into `~/.config/opencode/plugins/<plugin-name>.ts` (global) or
    `<project>/.opencode/plugins/<plugin-name>.ts` (project) — renamed to
    match your plugin's name, since that's the file OpenCode's plugin loader
@@ -248,7 +249,7 @@ for the full list of available events and their payload shapes.
 ### `maui install <source> [--agent <agent-name>...] [--scope global|project] [--plugin <name>...] [--all-plugins]`
 
 Fetches a plugin (a git URL, or a local path for development) and installs
-it into every agent maui detects, per that plugin's `maui.json`.
+it into every agent <span style="color:#C2A486">🪝maui</span>   detects, per that plugin's `maui.json`.
 
 ```bash
 # From GitHub
@@ -279,7 +280,7 @@ Failed: codex (Command failed (exit 1): npx codex-marketplace add … )
 
 **Installing from a multi-plugin marketplace repo** (`--source` resolving to
 a `create-marketplace`-shaped repo, see [Scaffolding](#scaffolding-a-plugin-or-marketplace))
-works too — maui never installs every plugin in the catalog silently, it
+works too — <span style="color:#C2A486">🪝maui</span>   never installs every plugin in the catalog silently, it
 always asks which one(s) you want:
 
 ```bash
@@ -324,7 +325,7 @@ With nothing installed, prints `No plugins installed.` rather than an error.
 
 Pulls the latest source for symlink-based installs (existing symlinks keep
 resolving — no relink step needed) and prints a hint for native-marketplace
-agents, since maui doesn't yet run their update commands automatically.
+agents, since <span style="color:#C2A486">🪝maui</span>   doesn't yet run their update commands automatically.
 
 ```bash
 # Update one plugin
@@ -409,7 +410,7 @@ Prints the full command list.
 
 ## The Plugin Manifest (`maui.json`)
 
-Every plugin that's installable *via maui* (as opposed to only via native
+Every plugin that's installable *via <span style="color:#C2A486">🪝maui</span>* (as opposed to only via native
 installers — see [below](#using-what-you-scaffolded)) has a `maui.json` at
 its root. It's the single source of truth for what gets installed where:
 
@@ -598,7 +599,7 @@ cataloging a plugin at `1.2.3`).
 
 ### The single-plugin repo: both ways work
 
-Once pushed to GitHub, install it via maui:
+Once pushed to GitHub, install it via <span style="color:#C2A486">🪝maui</span>  :
 
 ```bash
 maui install github.com/example-user/my-plugin
@@ -623,7 +624,7 @@ grok plugin marketplace add example-user/my-plugin
 grok plugin install my-plugin@my-plugin
 ```
 
-Both paths end up in the same place — maui's `claude-code` adapter runs
+Both paths end up in the same place — <span style="color:#C2A486">🪝maui</span>  's `claude-code` adapter runs
 literally those same two Claude commands under the hood.
 
 ### The multi-plugin marketplace repo: both ways work too, now
@@ -660,7 +661,7 @@ grok plugin install plugin-one@my-toolkit
 ```
 
 **OpenCode is still the odd one out**, but no longer stuck: since it has no
-marketplace CLI of its own, it only ever installs via maui's symlink
+marketplace CLI of its own, it only ever installs via <span style="color:#C2A486">🪝maui</span>  's symlink
 mechanism — which now works here too, since each plugin has its own
 `maui.json`. `maui install github.com/example-user/my-toolkit --plugin
 plugin-one` symlinks `plugin-one`'s `hooks/opencode-hooks.ts` into
@@ -680,14 +681,14 @@ begin with.
 | `<project>/.agents/` | Same, project scope |
 | `<project>/.maui/config.json` | Which plugins are linked into *this* project — commit this so teammates get the same set via `maui install` |
 
-maui never writes into an agent's own reserved config (e.g.
+<span style="color:#C2A486">🪝maui</span>   never writes into an agent's own reserved config (e.g.
 `~/.claude/settings.json`) — only the plugin directories a manifest
 explicitly declares, plus narrow marker-delimited edits to memory files via
 postinstall hooks.
 
 ## FAQ
 
-**Why isn't maui itself on npm?**
+**Why isn't <span style="color:#C2A486">🪝maui</span>   itself on npm?**
 It's a Bun-only CLI with a TypeScript shebang entrypoint, and there's no
 reason to publish a registry package just to have `bun add -g` fetch and
 unpack it — `bun add -g github:<owner>/maui` or `bunx github:<owner>/maui`
@@ -695,26 +696,26 @@ installs and runs it straight from source, with no registry, build step, or
 published artifact in between.
 
 **Can I install from a private GitHub repo?**
-Yes — maui does zero credential handling of its own. Fetching is a plain
+Yes — <span style="color:#C2A486">🪝maui</span>   does zero credential handling of its own. Fetching is a plain
 `git clone`, so it works exactly as well as running that clone yourself:
 fine with an SSH key in `ssh-agent` or an HTTPS credential helper already
 configured, since that's the actual mechanism underneath.
 
-**Will maui guess where to put an agent's files if my plugin's `maui.json` doesn't declare that agent?**
-No. maui is entirely manifest-driven — it only ever touches an agent that's
+**Will <span style="color:#C2A486">🪝maui</span>   guess where to put an agent's files if my plugin's `maui.json` doesn't declare that agent?**
+No. <span style="color:#C2A486">🪝maui</span>   is entirely manifest-driven — it only ever touches an agent that's
 an explicit key in `targets`. There's no filesystem sniffing or "probably
 goes here" fallback logic beyond the always-on `.agents/` folder.
 
 **What happens if I set `"marketplace": false` instead of `true`?**
 It fails validation immediately, for the whole install — not just that
-agent. `marketplace` isn't a toggle; it's how maui tells a native-marketplace
+agent. `marketplace` isn't a toggle; it's how <span style="color:#C2A486">🪝maui</span>   tells a native-marketplace
 target apart from a symlink target. To exclude an agent, omit its key from
 `targets` entirely rather than setting it to `false`.
 
 **Why can't I use `maui install --scope project` for Claude Code, Gemini, etc.?**
 Native-marketplace project scope isn't wired up yet — each agent has its
 own scope flags (`claude plugin install --scope project`, for example) that
-maui doesn't pass through in v1. `--scope project` currently only affects
+<span style="color:#C2A486">🪝maui</span>   doesn't pass through in v1. `--scope project` currently only affects
 symlink agents (Kiro, Cursor, Windsurf, `.agents/`).
 
 **Is every native command guaranteed correct?**
@@ -738,6 +739,16 @@ behavior lives; see
 for the full explanation and a hook-to-event mapping table.
 
 **What if a plugin's postinstall script does something I don't want?**
-Decline the consent prompt the first time it would run — maui shows you
+Decline the consent prompt the first time it would run — <span style="color:#C2A486">🪝maui</span>   shows you
 the script's path before asking, and nothing executes until you say yes.
 Declining aborts that one hook; the plugin's files still install normally.
+
+## Contributing
+
+<span style="color:#C2A486">🪝maui</span>   is spec-driven: `SPEC.md` is the source of truth for intended
+behavior, and `tasks/plan.md`/`tasks/todo.md` track how that behavior gets
+built and verified, phase by phase. See
+[CONTRIBUTION.md](CONTRIBUTION.md) for the full workflow — starting from
+`SPEC.md`, breaking work into tasks, and the test-first loop this project
+follows for every change — and `CLAUDE.md` for the architecture overview
+and day-to-day commands.

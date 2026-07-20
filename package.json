@@ -4,6 +4,11 @@
   "description": "Global multi-agent toolset installer",
   "type": "module",
   "private": true,
+  "license": "MIT",
+  "author": {
+    "name": "Thiago Alves Luiz",
+    "email": "taltk9@gmail.com"
+  },
   "bin": {
     "maui": "src/cli/index.ts"
   },
