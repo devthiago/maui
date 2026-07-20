@@ -13,12 +13,15 @@ import type { NativeMarketplaceAdapter } from "../types";
  * previously by analogy to Claude Code. `install`/`uninstall` need no
  * `<name>@<marketplace>` qualifier in this flow — a plugin installed
  * directly from git is later identified by its plain name. `--trust` is
- * required for any non-marketplace source. This shape is not confirmed by
- * docs.x.ai's own primary reference page (which stays silent on argument
- * syntax) — it's the most specific information available as of this
- * writing. A wrong guess still fails loudly with the real `grok` CLI's own
- * error output (via NativeInstallError), not silently — smoke-test against
- * a real `grok` CLI before relying on this in production.
+ * required for any non-marketplace source. docs.x.ai/build/cli/reference
+ * itself still stays silent on argument syntax, but a second, independent
+ * CLI reference (a plugin-management writeup covering install/uninstall
+ * and the git+url/npm/local-sideload "outside the marketplace" paths)
+ * describes this exact shape — corroborating, not just by-analogy anymore,
+ * though still not a live-CLI-verified fact. A wrong guess still fails
+ * loudly with the real `grok` CLI's own error output (via
+ * NativeInstallError), not silently — smoke-test against a real `grok`
+ * CLI before relying on this in production.
  */
 export const grokAdapter: NativeMarketplaceAdapter = {
   id: "grok",

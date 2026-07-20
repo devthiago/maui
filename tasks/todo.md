@@ -1,5 +1,47 @@
 # Task List: maui
 
+## Task 35: Corroborate Grok's install/uninstall shape with a second source ✅ done
+
+**Description:** Task 31 adopted `grok plugin install git+<url> --trust` /
+`grok plugin uninstall <name>` as "the most specific information available,"
+explicitly flagged as not confirmed by docs.x.ai/build/cli/reference's own
+argument syntax (that page only names subcommands). A second, independent
+CLI/plugin-management reference surfaced afterward, describing the identical
+install/uninstall shape (same `git+<url> --trust` form, same plain-name
+uninstall, plus the git/npm/local-sideload "outside the marketplace" install
+paths). No code behavior changed — the existing implementation already
+matched — but the confirmation-status wording in `grok.ts`'s comment and
+SPEC.md (Native-marketplace adapters section and Open Question #2c) was
+overstating uncertainty relative to current evidence.
+
+**Acceptance criteria:**
+- [x] `grok.ts`'s doc comment reflects corroboration from a second source, still honestly short of live-CLI verification
+- [x] SPEC.md's Native-marketplace adapters section and Open Question #2c updated to match, without overclaiming a docs.x.ai-primary-source confirmation that still doesn't exist
+- [x] No behavior change — `install()`/`remove()` bodies untouched
+
+**What actually happened:** compared the newly-surfaced reference against
+the shipped `grokAdapter.install`/`remove` implementation line by line — both
+matched exactly (git+url + `--trust`, plain-name uninstall). Updated the
+`grok.ts` comment and SPEC.md's two Grok call-outs to say "corroborated by a
+second, independent reference," not "confirmed by docs.x.ai," preserving the
+project's standing discipline of not overstating source provenance. Left the
+one still-genuinely-open item (whether Grok's skill loader reads
+`.agents/skills/`) untouched — the new source didn't address it either.
+
+**Verification:**
+- [x] `bun test` — no test changes needed, no behavior changed
+- [x] Manual diff review of `grok.ts` and `SPEC.md` for wording accuracy
+
+**Dependencies:** Task 31
+
+**Files touched:**
+- `src/adapters/grok.ts`
+- `SPEC.md`
+
+**Estimated scope:** Small
+
+---
+
 ## Task 18b: Wire all adapters into installPlugin/removePlugin orchestration ✅ done
 
 **Added mid-build:** Tasks 6/10-18 each built one adapter and tested it in

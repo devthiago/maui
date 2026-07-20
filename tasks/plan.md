@@ -187,6 +187,11 @@ safe default rather than guess.
       order, ahead of Tasks 30–33, due to a WebFetch/WebSearch outage —
       this task needed no external research.
 
+- [x] Task 35: Corroborate Grok's install/uninstall shape (Open Question
+      #2c) with a second, independent CLI reference that surfaced after
+      Task 31 — wording-only update, no behavior change since the shipped
+      implementation already matched.
+
 ### Checkpoint: Phase 11
 - [x] Every numbered Open Question (1–8, including sub-items 2a/2c) in
       SPEC.md reads as resolved or explicitly deferred with a stated reason

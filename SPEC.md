@@ -185,11 +185,14 @@ Cursor/Windsurf.
     required for any non-marketplace source
   - Remove: `grok plugin uninstall <plugin-name>` — plain name, since a
     plugin installed directly from git is identified by name afterward
-  - This argument shape is **not confirmed by docs.x.ai's own primary
-    reference page** — it's the most specific information available as of
-    this writing (see Open Question #2c), not a live-CLI-verified fact. A
-    wrong guess fails loudly with the real `grok` CLI's own error output,
-    not silently.
+  - docs.x.ai's own primary reference page still doesn't spell out argument
+    syntax, but this shape is now corroborated by a second, independent CLI
+    reference (a plugin-management writeup covering install/uninstall and
+    the git+url/npm/local-sideload "outside the marketplace" paths) that
+    describes the identical `git+<url> --trust` install / plain-name
+    uninstall flow (see Open Question #2c) — not a live-CLI-verified fact
+    yet, but no longer just by-analogy either. A wrong guess fails loudly
+    with the real `grok` CLI's own error output, not silently.
   - Also file-based (background, from docs.x.ai/build/features/skills-plugins-marketplaces):
     plugins live in `~/.grok/plugins/` (global) / `./.grok/plugins/`
     (project); marketplace sources track in `~/.grok/config.toml`
@@ -815,11 +818,14 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
     git-install path (`grok plugin install git+<url> --trust`, no
     `<name>@<marketplace>` qualifier) instead of the previous
     marketplace-add-then-install-by-name guess — see **Native-marketplace
-    adapters** above. This is a better-informed answer, not a fully
-    docs.x.ai-confirmed one: the primary reference page
+    adapters** above. The primary reference page
     (docs.x.ai/build/cli/reference) still only names the subcommands
-    without spelling out argument formats or scope flags. Smoke-test
-    against a real `grok` CLI before depending on this in production.
+    without spelling out argument formats or scope flags, but a second,
+    independent CLI/plugin-management reference has since corroborated this
+    exact shape (same `git+<url> --trust` install, same plain-name
+    uninstall) — raising confidence beyond "by analogy to Claude Code," but
+    still not a live-CLI-verified fact. Smoke-test against a real `grok`
+    CLI before depending on this in production.
     Still genuinely unconfirmed: whether Grok's skill loader reads
     `.agents/skills/` the way OpenCode's does — no source checked so far
     addresses it either way; don't rely on the always-on `.agents` fallback
