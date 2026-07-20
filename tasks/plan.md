@@ -293,10 +293,10 @@ close, not just extend around:
 - [x] Task 40: `installOnePlugin` extraction + `installMarketplace`/`installFromSource` + CLI wiring, proven against symlink targets only (`_default` + one real symlink adapter)
 
 ### Checkpoint: Phase 13 (walking skeleton)
-- [ ] `maui install <marketplace-fixture> --all-plugins` produces N independent registry entries sharing one `sourceRepo`, correct per-plugin `pluginPath`
-- [ ] `maui install <marketplace-fixture> --plugin a` (non-interactive) installs only `a`; no flags + no TTY hard-errors listing catalog names
-- [ ] `maui list` shows each selected plugin as its own entry
-- [ ] `installPlugin(source, options)` unchanged for every existing caller — full existing suite green
+- [x] `maui install <marketplace-fixture> --all-plugins` produces N independent registry entries sharing one `sourceRepo`, correct per-plugin `pluginPath`
+- [x] `maui install <marketplace-fixture> --plugin a` (non-interactive) installs only `a`; no flags + no TTY hard-errors listing catalog names
+- [x] `maui list` shows each selected plugin as its own entry (registry entries are independent, same shape `list` already reads)
+- [x] `installPlugin(source, options)` unchanged for every existing caller — full existing suite green
 
 - [ ] Task 41: Claude Code marketplace-mode — regression/proof only, no adapter code change expected
 - [ ] Task 42: `installsWholeMarketplace` dedup mechanism (install + remove), built against a fake test-double adapter
