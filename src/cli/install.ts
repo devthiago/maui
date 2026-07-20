@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { fetchPlugin } from "../core/fetch";
+import { fetchSource, type FetchedSource } from "../core/fetch";
 import { readManifest } from "../core/manifest";
 import { linkChildren } from "../core/linker";
 import { readRegistry, writeRegistry } from "../core/registry";
@@ -9,6 +9,8 @@ import { runHook } from "../core/postinstall";
 import { readProjectConfig, recordProjectPlugin } from "../core/project-config";
 import { getNativeMarketplaceAdapter, getSymlinkAdapter } from "../adapters/registry";
 import { isNativeMarketplaceTarget } from "../types";
+import { selectPlugins, type PluginSelectionOptions } from "../core/plugin-selection";
+import { MarketplaceModeMismatchError } from "../core/errors";
 import type {
   InstalledAgentEntry,
   NativeMarketplaceIdentity,
@@ -105,23 +107,26 @@ async function installFromProjectConfig(
   return { pluginName: `${pluginCount} plugin(s) from project config`, agents, skipped, failed };
 }
 
-export async function installPlugin(
-  source: string | undefined,
-  options: InstallOptions = {}
+/**
+ * Runs the per-target dispatch loop (native-marketplace + symlink) for one
+ * already-fetched plugin and writes its registry entry. Shared by
+ * single-plugin installs (`sourceRepo` equals `pluginDir`, no `pluginPath`)
+ * and marketplace-mode installs (`sourceRepo` is the shared clone,
+ * `pluginPath` locates this plugin's subfolder within it) — this is the
+ * only place that writes a plugin's registry entry, so both paths stay in
+ * sync automatically.
+ */
+async function installOnePlugin(
+  pluginDir: string,
+  manifest: PluginManifest,
+  source: string,
+  sourceRepo: string,
+  pluginPath: string | undefined,
+  options: InstallOptions
 ): Promise<InstallResult> {
   const home = options.home ?? homedir();
   const cwd = options.cwd ?? process.cwd();
   const scope: Scope = options.scope ?? "global";
-
-  if (!source) {
-    if (scope !== "project") {
-      throw new Error("maui install: missing <source> argument");
-    }
-    return installFromProjectConfig(home, cwd, options);
-  }
-
-  const pluginDir = await fetchPlugin(source, home);
-  const manifest = await readManifest(pluginDir);
 
   const agents: InstalledAgentEntry[] = [];
   const skipped: string[] = [];
@@ -244,6 +249,8 @@ export async function installPlugin(
     version: manifest.version,
     installedAt: existing?.installedAt ?? new Date().toISOString(),
     agents: [...keptAgents, ...agents],
+    sourceRepo,
+    ...(pluginPath ? { pluginPath } : {}),
   };
   await writeRegistry(registry, home);
 
@@ -252,4 +259,101 @@ export async function installPlugin(
   }
 
   return { pluginName: manifest.name, agents, skipped, failed };
+}
+
+async function installFetchedMarketplace(
+  fetched: Extract<FetchedSource, { mode: "marketplace" }>,
+  source: string,
+  options: InstallOptions & PluginSelectionOptions
+): Promise<InstallResult[]> {
+  const selected = await selectPlugins(fetched.catalog, options);
+  const results: InstallResult[] = [];
+  for (const entry of selected) {
+    const pluginDir = join(fetched.cacheDir, entry.pluginPath);
+    const manifest = await readManifest(pluginDir);
+    results.push(
+      await installOnePlugin(pluginDir, manifest, source, fetched.cacheDir, entry.pluginPath, options)
+    );
+  }
+  return results;
+}
+
+/**
+ * Single-plugin-only entrypoint — kept byte-for-byte compatible in
+ * signature/behavior with the original v1 `installPlugin` for existing
+ * callers. Throws if `source` turns out to be a multi-plugin marketplace;
+ * use `installFromSource`/`installMarketplace` for that case instead of
+ * guessing which plugin(s) to install.
+ */
+export async function installPlugin(
+  source: string | undefined,
+  options: InstallOptions = {}
+): Promise<InstallResult> {
+  const home = options.home ?? homedir();
+  const cwd = options.cwd ?? process.cwd();
+  const scope: Scope = options.scope ?? "global";
+
+  if (!source) {
+    if (scope !== "project") {
+      throw new Error("maui install: missing <source> argument");
+    }
+    return installFromProjectConfig(home, cwd, options);
+  }
+
+  const fetched = await fetchSource(source, home);
+  if (fetched.mode === "marketplace") {
+    throw new MarketplaceModeMismatchError("single", fetched.mode);
+  }
+
+  const manifest = await readManifest(fetched.cacheDir);
+  return installOnePlugin(fetched.cacheDir, manifest, source, fetched.cacheDir, undefined, options);
+}
+
+/**
+ * Multi-plugin-marketplace-only entrypoint. Throws if `source` turns out to
+ * be single-plugin; use `installPlugin`/`installFromSource` for that case.
+ */
+export async function installMarketplace(
+  source: string,
+  options: InstallOptions & PluginSelectionOptions = {}
+): Promise<InstallResult[]> {
+  const home = options.home ?? homedir();
+  const fetched = await fetchSource(source, home);
+  if (fetched.mode !== "marketplace") {
+    throw new MarketplaceModeMismatchError("marketplace", fetched.mode);
+  }
+
+  return installFetchedMarketplace(fetched, source, options);
+}
+
+/**
+ * Detects which shape `source` is and dispatches accordingly — the
+ * function the CLI actually calls, since it doesn't know in advance
+ * whether a source is single-plugin or a marketplace. Always returns an
+ * array (length 1 for single-plugin/project-config sources).
+ */
+export async function installFromSource(
+  source: string | undefined,
+  options: InstallOptions & PluginSelectionOptions = {}
+): Promise<InstallResult[]> {
+  const home = options.home ?? homedir();
+  const cwd = options.cwd ?? process.cwd();
+  const scope: Scope = options.scope ?? "global";
+
+  if (!source) {
+    if (scope !== "project") {
+      throw new Error("maui install: missing <source> argument");
+    }
+    return [await installFromProjectConfig(home, cwd, options)];
+  }
+
+  const fetched = await fetchSource(source, home);
+  if (fetched.mode === "marketplace") {
+    return installFetchedMarketplace(fetched, source, options);
+  }
+
+  const manifest = await readManifest(fetched.cacheDir);
+  return [
+    await installOnePlugin(fetched.cacheDir, manifest, source, fetched.cacheDir, undefined, options),
+  ];
 }

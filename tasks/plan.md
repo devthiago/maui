@@ -290,7 +290,7 @@ close, not just extend around:
 - [x] `fetchSource` on a single-plugin fixture produces a byte-identical cache dir to today's `fetchPlugin`
 
 - [x] Task 39: Plugin selection — interactive prompt + `--plugin`/`--all-plugins` + hard error on no-TTY-no-flags
-- [ ] Task 40: `installOnePlugin` extraction + `installMarketplace`/`installFromSource` + CLI wiring, proven against symlink targets only (`_default` + one real symlink adapter)
+- [x] Task 40: `installOnePlugin` extraction + `installMarketplace`/`installFromSource` + CLI wiring, proven against symlink targets only (`_default` + one real symlink adapter)
 
 ### Checkpoint: Phase 13 (walking skeleton)
 - [ ] `maui install <marketplace-fixture> --all-plugins` produces N independent registry entries sharing one `sourceRepo`, correct per-plugin `pluginPath`

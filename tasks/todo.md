@@ -279,7 +279,7 @@ for every sibling) followed by one `claude plugin install
 
 ---
 
-## Task 40: `installOnePlugin` extraction + `installMarketplace`/`installFromSource` + CLI wiring
+## Task 40: `installOnePlugin` extraction + `installMarketplace`/`installFromSource` + CLI wiring ✅ done
 
 **Description:** Extract `installPlugin`'s per-plugin core (the
 target-dispatch loop + registry-entry write, currently inline) into a shared
@@ -301,20 +301,21 @@ marketplace-mode manifest flow through the same shared loop but are proven
 starting Task 41.
 
 **Acceptance criteria:**
-- [ ] `installPlugin(source, options)` (existing signature) is behaviorally and type-identical to today for every existing caller — all existing test files pass unmodified
-- [ ] `installMarketplace()` against a 2-plugin symlink-only fixture (`_default` + Kiro) produces 2 registry entries sharing one `sourceRepo`, each with correct `pluginPath` and correct `symlinks`
-- [ ] `maui install <marketplace-fixture> --all-plugins` (CLI) installs both and prints both summaries; `--plugin a` installs only `a`
-- [ ] `maui install <marketplace-fixture>` with no flags and piped (non-TTY) stdin exits non-zero with the plugin-name list from Task 39's error
+- [x] `installPlugin(source, options)` (existing signature) is behaviorally and type-identical to today for every existing caller — all existing test files pass unmodified
+- [x] `installMarketplace()` against a 2-plugin symlink-only fixture (`_default` + Kiro) produces 2 registry entries sharing one `sourceRepo`, each with correct `pluginPath` and correct `symlinks`
+- [x] `maui install <marketplace-fixture> --all-plugins` (CLI) installs both and prints both summaries; `--plugin a` installs only `a`
+- [x] `maui install <marketplace-fixture>` with no flags and no TTY (the real test-runner environment) exits non-zero with the plugin-name list from Task 39's error
 
 **Verification:**
-- [ ] New `tests/integration/install-marketplace-skeleton.test.ts` covering the above
-- [ ] Full existing suite green (`bun test`)
+- [x] New `tests/integration/install-marketplace-skeleton.test.ts` covering the above
+- [x] Full existing suite green (`bun test`, `bun run build`, `bun run lint`)
 
 **Dependencies:** Task 36, Task 38, Task 39
 
-**Files likely touched:**
-- `src/cli/install.ts`
-- `src/cli/index.ts`
+**Files touched:**
+- `src/cli/install.ts` (`installOnePlugin` extraction; `installPlugin`/`installMarketplace`/`installFromSource`)
+- `src/cli/index.ts` (`--plugin`/`--all-plugins` parsing, `runInstall` now calls `installFromSource`)
+- `src/core/errors.ts` (`MarketplaceModeMismatchError`)
 - `tests/integration/install-marketplace-skeleton.test.ts` (new)
 
 **Estimated scope:** Large

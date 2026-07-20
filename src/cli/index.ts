@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { helpText, knownSubcommand } from "./commands";
-import { installPlugin } from "./install";
+import { installFromSource } from "./install";
 import { listPlugins } from "./list";
 import { removePlugin } from "./remove";
 import { linkPlugin } from "./link";
@@ -19,10 +19,14 @@ function parseInstallArgs(args: string[]): {
   source?: string;
   scope: "global" | "project";
   agents?: string[];
+  pluginFlags?: string[];
+  allPlugins?: boolean;
 } {
   let source: string | undefined;
   let scope: "global" | "project" = "global";
   const agents: string[] = [];
+  const plugins: string[] = [];
+  let allPlugins = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -32,27 +36,47 @@ function parseInstallArgs(args: string[]): {
     } else if (arg === "--agent") {
       const value = args[++i];
       if (value) agents.push(value);
+    } else if (arg === "--plugin") {
+      const value = args[++i];
+      if (value) plugins.push(value);
+    } else if (arg === "--all-plugins") {
+      allPlugins = true;
     } else if (arg && !arg.startsWith("--") && !source) {
       source = arg;
     }
   }
 
-  return { source, scope, agents: agents.length > 0 ? agents : undefined };
+  return {
+    source,
+    scope,
+    agents: agents.length > 0 ? agents : undefined,
+    pluginFlags: plugins.length > 0 ? plugins : undefined,
+    allPlugins: allPlugins || undefined,
+  };
 }
 
 async function runInstall(args: string[]): Promise<CliResult> {
-  const { source, scope, agents: agentFilter } = parseInstallArgs(args);
+  const { source, scope, agents: agentFilter, pluginFlags, allPlugins } = parseInstallArgs(args);
   if (!source && scope !== "project") {
     return { code: 1, stderr: "maui install: missing <source> argument" };
   }
 
   try {
-    const result = await installPlugin(source, { scope, agents: agentFilter });
-    const agentNames = result.agents.map((entry) => entry.agent).join(", ") || "no agents";
-    const lines = [`Installed ${result.pluginName} → ${agentNames}`];
-    if (result.skipped.length > 0) lines.push(`Skipped: ${result.skipped.join(", ")}`);
-    if (result.failed.length > 0) lines.push(`Failed: ${result.failed.join(", ")}`);
-    return { code: result.failed.length > 0 ? 1 : 0, stdout: lines.join("\n") };
+    const results = await installFromSource(source, {
+      scope,
+      agents: agentFilter,
+      pluginFlags,
+      allPlugins,
+    });
+    const blocks = results.map((result) => {
+      const agentNames = result.agents.map((entry) => entry.agent).join(", ") || "no agents";
+      const lines = [`Installed ${result.pluginName} → ${agentNames}`];
+      if (result.skipped.length > 0) lines.push(`Skipped: ${result.skipped.join(", ")}`);
+      if (result.failed.length > 0) lines.push(`Failed: ${result.failed.join(", ")}`);
+      return lines.join("\n");
+    });
+    const anyFailed = results.some((result) => result.failed.length > 0);
+    return { code: anyFailed ? 1 : 0, stdout: blocks.join("\n\n") };
   } catch (error) {
     return { code: 1, stderr: `maui install: ${(error as Error).message}` };
   }

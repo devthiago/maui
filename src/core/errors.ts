@@ -11,3 +11,14 @@ export class UnsupportedRemovalError extends Error {
     this.name = "UnsupportedRemovalError";
   }
 }
+
+export class MarketplaceModeMismatchError extends Error {
+  constructor(expected: "single" | "marketplace", actual: string) {
+    super(
+      expected === "single"
+        ? `This source is a multi-plugin marketplace — use installFromSource() (or the "maui install" CLI, which handles both) instead of installPlugin() for it.`
+        : `This source is not a multi-plugin marketplace (mode: ${actual}) — use installPlugin() instead of installMarketplace() for it.`
+    );
+    this.name = "MarketplaceModeMismatchError";
+  }
+}
