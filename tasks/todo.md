@@ -1,5 +1,470 @@
 # Task List: maui
 
+## Task 49: `create-plugin` marketplace mode generates a per-plugin `maui.json`
+
+**Description:** `scaffoldPluginInMarketplace` (`src/core/scaffold.ts`,
+~line 337) generates `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`,
+`package.json`, and `scripts/bump-version.ts` for a plugin added to an
+existing marketplace repo, but never a `maui.json` — a documented gap (see
+`tests/integration/create-plugin-marketplace-mode.test.ts` lines 38-40,
+which currently *asserts* it's absent). Fix this: generate a per-plugin
+`maui.json` with the same pre-wired targets as the standalone scaffold
+(`marketplace: true` for claude-code/codex/gemini/grok, symlink mappings for
+cursor/windsurf/kiro/`_default`), but derive `repo`/`marketplaceName` from
+the **root** `.claude-plugin/marketplace.json`'s own `name`/`owner.name`
+fields (read at scaffold time) rather than from `options.githubUser`/
+`options.pluginName` alone — those describe the plugin, not the repo it
+lives in. Also extend `pluginInMarketplaceBumpVersionScript(pluginName)` to
+bump this new `maui.json`'s `version` field alongside the files it already
+bumps.
+
+**Acceptance criteria:**
+- [ ] `plugins/<name>/maui.json` exists after marketplace-mode `create-plugin`, `name`/`version` matching the plugin's own `.claude-plugin/plugin.json`
+- [ ] `targets["claude-code"].repo`/`marketplaceName` match the root marketplace.json's owner/name, not the plugin's own name
+- [ ] Existing standalone-mode scaffold regression guard (same test file) is unaffected
+- [ ] The per-plugin `version:bump` script also bumps the new `maui.json`'s `version`
+
+**Verification:**
+- [ ] `bun test tests/integration/create-plugin-marketplace-mode.test.ts` (flip the "no maui.json" assertion, add new coverage)
+- [ ] `bun test` (full suite regression)
+
+**Dependencies:** None — independent of Tasks 36–48, can ship any time
+
+**Files likely touched:**
+- `src/core/scaffold.ts`
+- `tests/integration/create-plugin-marketplace-mode.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+## Task 48: `maui remove --purge` — fix cache-dir key bug + sibling-check
+
+**Description:** `removePlugin`'s purge branch (`src/cli/remove.ts:73`) does
+`rm(join(pluginsRoot(home), name), ...)` — keyed by the plugin's own
+registry name. Correct today only because cache dirs happen to be named
+after the plugin; once marketplace-mode plugins share one clone named after
+the *marketplace* (Task 36's `sourceRepo`), this silently rm's a path that
+never existed (swallowed by `force: true`), leaking the real clone forever.
+Fix: purge via `resolvePluginCacheDir(entry, home)` instead. Before that, add
+a sibling-check — after this plugin's own registry entry is removed/updated,
+scan remaining `registry.plugins` for any other entry whose `sourceRepo`
+matches; if one exists, skip the `rm` entirely (report why) regardless of
+`--purge` or the existing "still linked elsewhere" confirm prompt — only
+proceed to delete when this plugin is the last one referencing that cache
+dir.
+
+**Acceptance criteria:**
+- [ ] Purging a marketplace-mode plugin whose siblings are still installed leaves the shared clone on disk, with a clear message explaining why
+- [ ] Purging the last plugin referencing a shared clone actually deletes it — assert the directory is gone, not just that `rm` didn't throw (proves the bug is fixed)
+- [ ] Purging a single-plugin (non-marketplace) install is unchanged from today (regression)
+
+**Verification:**
+- [ ] `bun test tests/integration/remove.test.ts` (extended)
+
+**Dependencies:** Task 36, Task 40
+
+**Files likely touched:**
+- `src/cli/remove.ts`
+- `tests/integration/remove.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+## Task 47: `maui update` — dedupe by `sourceRepo`
+
+**Description:** `updatePlugin(name)` (`src/cli/update.ts`) currently calls
+`fetchPlugin(entry.source, home)` directly; switch it to resolve
+`entry.sourceRepo` (via Task 36's `resolvePluginCacheDir`) and call
+`fetchSource` once for that cache dir. `runUpdate`'s bare-args path
+(`src/cli/index.ts:185-192`) currently loops every registry key and calls
+`updatePlugin(name)` unconditionally — once N plugins share one clone this
+re-fetches the same repo N times. Fix: group registry entries by
+`sourceRepo` first, refresh once per distinct group, then report every
+plugin name that benefited from that one refresh.
+
+**Acceptance criteria:**
+- [ ] `maui update <name>` on a marketplace-shared plugin refreshes the one shared clone; a sibling plugin's symlinks still resolve with no relink step (existing guarantee, now proven across siblings)
+- [ ] `maui update` (bare) with 2 plugins sharing one `sourceRepo` triggers exactly one fetch/copy operation, reported against both plugin names
+- [ ] `maui update` (bare) with 2 unrelated single-plugin sources still triggers 2 separate operations (regression)
+
+**Verification:**
+- [ ] `bun test tests/integration/update.test.ts` (extended)
+
+**Dependencies:** Task 38, Task 40
+
+**Files likely touched:**
+- `src/cli/update.ts`
+- `src/cli/index.ts`
+- `tests/integration/update.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+## Task 46: Codex marketplace-mode wiring
+
+**Description:** Implement per Task 45's finding. Most likely outcome (per
+current evidence — `codex-marketplace`'s documented multi-plugin command is
+`add <repo> --plugins`, plural, no name argument, crawling the whole
+`plugins/` folder): no per-plugin selection flag exists, so `codexAdapter`
+gets `installsWholeMarketplace: true` (Task 42's mechanism, same as Gemini)
+plus a loud, explicit warning surfaced to the user whenever the selection
+excludes at least one catalogued plugin, stating that Codex installs the
+whole marketplace regardless of selection. If Task 45 *does* confirm a
+per-plugin flag, implement the normal per-selection loop instead (Task 41's
+shape).
+
+**Acceptance criteria:**
+- [ ] Behavior matches whichever branch Task 45 confirmed, with a code comment citing the specific doc/`--help` output relied on
+- [ ] If whole-repo-only: a partial selection (2 of 3 catalogued plugins) still surfaces a clear warning naming the excluded plugin(s)
+
+**Verification:**
+- [ ] `bun test tests/integration/codex-marketplace.test.ts` (new)
+
+**Dependencies:** Task 42, Task 45
+
+**Files likely touched:**
+- `src/adapters/codex.ts`
+- `src/cli/install.ts` (warning surface)
+- `tests/integration/codex-marketplace.test.ts` (new)
+
+**Estimated scope:** Medium
+
+---
+
+## Task 45: Codex research — confirm or deny a per-plugin selection flag (Open Question #9)
+
+**Description:** Pure research, no code. Check codex-marketplace.com/docs
+and `npx codex-marketplace --help`/`add --help` for a documented way to
+install one named plugin out of a multi-plugin repo, as opposed to the
+whole-repo `--plugins` flag already documented. Update SPEC.md's Open
+Question #9 and the Codex bullet in "Per-adapter marketplace behavior" with
+whatever is actually confirmed — including explicitly recording "still
+unconfirmed" if that's the honest outcome, per this project's standing
+research-before-implementing discipline (Tasks 29–35).
+
+**Acceptance criteria:**
+- [ ] Open Question #9 in SPEC.md updated to either a confirmed flag shape or an explicit "unconfirmed, adopting the safe default" decision — never left as a bare question
+- [ ] No code changes in this task
+
+**Verification:**
+- [ ] Manual diff review of SPEC.md
+
+**Dependencies:** None — can run any time, ideally before Task 46
+
+**Files likely touched:**
+- `SPEC.md`
+
+**Estimated scope:** Small
+
+---
+
+## Task 44: Grok marketplace-mode branching
+
+**Description:** Add `sourceMode?: "single" | "marketplace"` to
+`NativeAdapterRuntimeOptions` (`src/types.ts`), threaded from
+`installMarketplace`/`installPlugin` into every adapter call (single mode
+omits it or sets `"single"`, preserving today's behavior for existing
+callers). `grokAdapter.install()` branches: `sourceMode !== "marketplace"` →
+unchanged direct-git path (`grok plugin install git+<url> --trust`);
+`sourceMode === "marketplace"` → `grok plugin marketplace add <url>` once +
+`grok plugin install <name>@<marketplace>` once per selected plugin,
+matching Claude Code's shape. `remove()` mirrors the same branch.
+
+**Acceptance criteria:**
+- [ ] Single-plugin source still produces the exact same `git+<url> --trust` command as today (regression)
+- [ ] Marketplace-mode source with N selections produces one `marketplace add` + N `install <name>@<marketplace>` calls
+- [ ] Existing `tests/integration/grok.test.ts` passes unmodified
+
+**Verification:**
+- [ ] `bun test tests/integration/grok.test.ts tests/integration/grok-marketplace.test.ts` (new)
+
+**Dependencies:** Task 40
+
+**Files likely touched:**
+- `src/types.ts`
+- `src/adapters/grok.ts`
+- `src/cli/install.ts` (thread `sourceMode` through)
+- `tests/integration/grok-marketplace.test.ts` (new)
+
+**Estimated scope:** Medium
+
+---
+
+## Task 43: Gemini marketplace-mode
+
+**Description:** Set `installsWholeMarketplace: true` on `geminiAdapter`.
+Verify end-to-end with the real adapter (fake `gemini` on fixture `$PATH`)
+that a marketplace-mode install with N selections calls `gemini extensions
+install <repo>` exactly once, and every selected plugin's registry entry
+records `gemini` as installed via that one call.
+
+**Acceptance criteria:**
+- [ ] N-selection install fires `gemini extensions install` exactly once
+- [ ] Removing all-but-one selected plugin never calls `gemini extensions uninstall`; removing the last one does
+
+**Verification:**
+- [ ] `bun test tests/integration/gemini-marketplace.test.ts` (new)
+
+**Dependencies:** Task 42
+
+**Files likely touched:**
+- `src/adapters/gemini.ts`
+- `tests/integration/gemini-marketplace.test.ts` (new)
+
+**Estimated scope:** Small
+
+---
+
+## Task 42: `installsWholeMarketplace` dedup mechanism (install + remove)
+
+**Description:** Add `installsWholeMarketplace?: boolean` to
+`NativeMarketplaceAdapter` (`src/types.ts`). In `installMarketplace`'s
+per-selection loop, track already-invoked agent IDs for adapters with the
+flag set within one install run; skip the actual `.install()` call on
+repeats but still record each selected plugin's own registry `agents` entry
+(so `list` shows it as installed). In `removePlugin`, before calling
+`adapter.remove()` for an agent entry whose adapter has the flag, scan
+`registry.plugins` for any *other* entry sharing the same `sourceRepo` that
+still has an agent entry for that same agent ID — if found, skip the native
+`.remove()` call entirely (just drop this plugin's own registry
+association), only calling it when this is the last sibling.
+
+**Acceptance criteria:**
+- [ ] A fake `installsWholeMarketplace` test-double adapter invoked with 3 selections calls `.install()` exactly once
+- [ ] Removing one of those 3 plugins (siblings still registered) does not call `.remove()`; removing the last of the 3 does
+- [ ] Non-flagged adapters (Claude Code, Grok in marketplace mode) are completely unaffected — regression test against Task 41
+
+**Verification:**
+- [ ] `bun test tests/unit/native-dedup.test.ts` (new, using a fake adapter, not a real one)
+
+**Dependencies:** Task 40
+
+**Files likely touched:**
+- `src/types.ts`
+- `src/cli/install.ts`
+- `src/cli/remove.ts`
+- `tests/unit/native-dedup.test.ts` (new)
+
+**Estimated scope:** Medium
+
+---
+
+## Task 41: Claude Code marketplace-mode loop
+
+**Description:** No new mechanism — prove `installOnePlugin`'s existing
+native-marketplace branch (unchanged since Task 18b) correctly handles being
+called once per selected plugin, each with its own manifest's
+`resolveNativeIdentity()`, all sharing one `claude plugin marketplace add
+<repo>` call (since `identity.repo` resolves from the shared `source`, same
+for every sibling) followed by one `claude plugin install
+<name>@<marketplace>` per selection.
+
+**Acceptance criteria:**
+- [ ] A 3-plugin marketplace fixture, selecting 2 of 3, produces exactly one `plugin marketplace add` log line and exactly two `plugin install <name>@<marketplace>` lines (fake `claude` on fixture `$PATH`)
+- [ ] Each selected plugin gets its own registry entry with a distinct `identity.pluginName` but identical `identity.marketplaceName`/`repo`
+
+**Verification:**
+- [ ] `bun test tests/integration/claude-code-marketplace.test.ts` (new)
+
+**Dependencies:** Task 40
+
+**Files likely touched:**
+- `tests/integration/claude-code-marketplace.test.ts` (new)
+- (no `src/adapters/claude-code.ts` change expected — regression-proving task)
+
+**Estimated scope:** Small
+
+---
+
+## Task 40: `installOnePlugin` extraction + `installMarketplace`/`installFromSource` + CLI wiring
+
+**Description:** Extract `installPlugin`'s per-plugin core (the
+target-dispatch loop + registry-entry write, currently inline) into a shared
+internal function, e.g. `installOnePlugin(pluginDir, manifest, source,
+sourceRepo, pluginPath, options)`, called once by unchanged `installPlugin`
+(single mode, `sourceRepo = pluginDir`, no `pluginPath`) and once per
+selection by new `installMarketplace(source, options)` (marketplace mode:
+fetch once via `fetchSource`, run Task 39's selection against the catalog,
+then call `installOnePlugin` once per selected plugin with `pluginDir =
+join(cacheDir, pluginPath)`, `sourceRepo = cacheDir`). Add top-level
+`installFromSource(source, options): Promise<InstallResult[]>` that runs
+`detectSourceMode` and dispatches to one or the other, always returning an
+array (length 1 for single mode). Wire `--plugin`/`--all-plugins` into
+`parseInstallArgs` in `src/cli/index.ts`, and switch `runInstall` to call
+`installFromSource`, printing one summary block per result. **Scope this
+task to symlink targets only** (`_default` + one real symlink adapter, e.g.
+Kiro) for its own test fixtures — native-marketplace targets in a
+marketplace-mode manifest flow through the same shared loop but are proven
+starting Task 41.
+
+**Acceptance criteria:**
+- [ ] `installPlugin(source, options)` (existing signature) is behaviorally and type-identical to today for every existing caller — all existing test files pass unmodified
+- [ ] `installMarketplace()` against a 2-plugin symlink-only fixture (`_default` + Kiro) produces 2 registry entries sharing one `sourceRepo`, each with correct `pluginPath` and correct `symlinks`
+- [ ] `maui install <marketplace-fixture> --all-plugins` (CLI) installs both and prints both summaries; `--plugin a` installs only `a`
+- [ ] `maui install <marketplace-fixture>` with no flags and piped (non-TTY) stdin exits non-zero with the plugin-name list from Task 39's error
+
+**Verification:**
+- [ ] New `tests/integration/install-marketplace-skeleton.test.ts` covering the above
+- [ ] Full existing suite green (`bun test`)
+
+**Dependencies:** Task 36, Task 38, Task 39
+
+**Files likely touched:**
+- `src/cli/install.ts`
+- `src/cli/index.ts`
+- `tests/integration/install-marketplace-skeleton.test.ts` (new)
+
+**Estimated scope:** Large
+
+---
+
+## Task 39: Plugin selection — interactive prompt + `--plugin`/`--all-plugins` + hard error
+
+**Description:** New function, e.g. `selectPlugins(catalog, options)` in
+`src/core/plugin-selection.ts`, taking the marketplace `catalog` from Task
+38 plus `{ pluginFlags?: string[], allPlugins?: boolean, isTTY?: boolean,
+prompt?: (question) => Promise<string> }` (both `isTTY`/`prompt` injectable
+for testability, mirroring the existing `confirm`-injection pattern in
+`remove.ts`/`codex.ts`). Behavior: `--plugin`/`--all-plugins` always
+short-circuit the prompt (interactive or not); with neither and a TTY,
+print a numbered `name — description` list and parse a comma-separated
+answer or `all`; with neither and no TTY, throw a new
+`PluginSelectionRequiredError` listing the catalog's plugin names (matching
+the project's "explicit error types over generic Error" style from
+`core/errors.ts`).
+
+**Acceptance criteria:**
+- [ ] `--plugin a --plugin b` selects exactly `["a", "b"]`, no prompt invoked, regardless of `isTTY`
+- [ ] `--all-plugins` selects every catalog entry, no prompt invoked
+- [ ] No flags + `isTTY: true` + injected prompt returning `"1,3"` selects the 1st and 3rd catalog entries; `"all"` selects everything
+- [ ] No flags + `isTTY: false` throws `PluginSelectionRequiredError` whose message lists every catalog plugin name
+- [ ] Invalid numeric input (out of range, non-numeric) in interactive mode re-prompts or errors clearly, doesn't silently install nothing
+
+**Verification:**
+- [ ] `bun test tests/unit/plugin-selection.test.ts`
+
+**Dependencies:** None (only needs a catalog shape — can be built against a hand-written fixture ahead of Task 38 if desired)
+
+**Files likely touched:**
+- `src/core/plugin-selection.ts` (new)
+- `src/core/errors.ts` (add `PluginSelectionRequiredError`)
+- `tests/unit/plugin-selection.test.ts` (new)
+
+**Estimated scope:** Medium
+
+---
+
+## Task 38: `fetchSource()` — cache-key rewrite consuming Task 37
+
+**Description:** Replace `fetchPlugin`'s hardcoded `manifest.name` cache key
+with mode-aware logic: clone/copy source into staging (unchanged), call
+`detectSourceMode(staging)`, then compute the target cache dir as
+`join(pluginsRoot(home), manifest.name)` for single mode (byte-identical to
+today) or `join(pluginsRoot(home), marketplaceName)` for marketplace mode.
+Export as `fetchSource(source, home): Promise<FetchedSource>` where
+`FetchedSource` carries `{ cacheDir, mode, ...(mode === "marketplace" ? {
+marketplaceName, catalog } : {}) }`. Keep `fetchPlugin` as a thin
+single-mode-only wrapper around `fetchSource` so existing call sites
+(`install.ts`, `update.ts`) don't need to change in this task — they're
+migrated in Tasks 40/47.
+
+**Acceptance criteria:**
+- [ ] Single-plugin fixture: `fetchSource` produces the same `cacheDir` path and contents as today's `fetchPlugin`
+- [ ] Marketplace fixture (root `marketplace.json` + `plugins/a/maui.json` + `plugins/b/maui.json`): `fetchSource` copies the whole repo once into `~/.maui/plugins/<marketplace-name>/`, and `FetchedSource.catalog` lists both `a` and `b` with correct `pluginPath`
+- [ ] Re-fetching the same marketplace source wipes and recopies the one shared dir (idempotent, matching today's single-plugin guarantee)
+- [ ] `fetchPlugin(source, home)` (existing signature) still passes every existing caller's test unchanged
+
+**Verification:**
+- [ ] `bun test tests/unit/fetch.test.ts` (extended) and full existing `tests/integration/install.test.ts` suite (regression)
+
+**Dependencies:** Task 37
+
+**Files likely touched:**
+- `src/core/fetch.ts`
+- `tests/unit/fetch.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+## Task 37: `detectSourceMode()` — single-plugin vs. marketplace detection primitive
+
+**Description:** New pure function (`src/core/source-mode.ts`), given an
+already-fetched root directory, returns a discriminated union: `{ mode:
+"single" }` when `<root>/maui.json` exists (checked **first**, full
+stop — do not consult `marketplace.json` at all in this case, since that's
+what keeps every existing single-plugin fixture/test unchanged); else, if
+`<root>/.claude-plugin/marketplace.json` exists, parse its `plugins` array
+and return `{ mode: "marketplace", marketplaceName, catalog: [{ name,
+source, description? }] }` for entries whose `source` matches
+`./plugins/<name>` (strip the `./` prefix, store as `pluginPath`); else
+`{ mode: "none" }` (today's existing "no manifest" failure path —
+`readManifest` throwing `ManifestValidationError` — unchanged, not newly
+built here). Also fix SPEC.md's "Detecting single-plugin vs. marketplace
+mode" section, whose current wording reads as if `marketplace.json`'s shape
+is checked before/independent of `maui.json`'s presence — correct it to
+state the maui.json-first algorithm explicitly, since that's what's
+actually backward-compatible with every existing single-plugin fixture.
+
+**Acceptance criteria:**
+- [ ] Root `maui.json` present → `{ mode: "single" }`, regardless of whether a `marketplace.json` also exists (covers the self-hosted single-plugin marketplace scaffold shape)
+- [ ] No `maui.json`, root `marketplace.json` with ≥1 `./plugins/<name>` entries → `{ mode: "marketplace", ... }` with correct `catalog`
+- [ ] No `maui.json`, no `marketplace.json` (or one with no `./plugins/` entries) → `{ mode: "none" }`
+- [ ] Malformed `marketplace.json` (not JSON, missing `plugins` array) throws a typed error, not a generic crash
+- [ ] SPEC.md's "Detecting single-plugin vs. marketplace mode" section wording matches this maui.json-first algorithm
+
+**Verification:**
+- [ ] `bun test tests/unit/source-mode.test.ts` — pure fixture-directory tests, no network/git
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `src/core/source-mode.ts` (new)
+- `tests/unit/source-mode.test.ts` (new)
+- `SPEC.md`
+
+**Estimated scope:** Small
+
+---
+
+## Task 36: Registry schema — `sourceRepo` + `pluginPath`, backward-compat fallback
+
+**Description:** Add `sourceRepo?: string` and `pluginPath?: string` to
+`RegistryPluginEntry` in `src/types.ts`. `sourceRepo` is the absolute path
+of the shared cache directory (`~/.maui/plugins/<cache-key>/`) and is
+populated for **every** entry going forward, single-plugin included (cache
+key equals `manifest.name` in that case, so it's just today's
+`join(pluginsRoot(home), manifest.name)` made explicit). `pluginPath` is the
+plugin's relative subpath within that cache dir (`plugins/<name>`) and is
+only set for marketplace-mode entries. Add a small helper,
+`resolvePluginCacheDir(entry, home)`, used by every later task (`update`,
+`remove`, dedup logic) instead of re-deriving the path inline — falls back
+to `join(pluginsRoot(home), entry.name)` when `entry.sourceRepo` is absent
+(pre-migration registries).
+
+**Acceptance criteria:**
+- [ ] `RegistryPluginEntry` gains both optional fields; existing registry JSON files (no such fields) still parse and round-trip without error
+- [ ] `resolvePluginCacheDir()` returns the correct absolute path for both a fixture entry with `sourceRepo` set and one without (simulating a pre-migration entry)
+- [ ] No existing registry round-trip test breaks
+
+**Verification:**
+- [ ] `bun test tests/unit/registry.test.ts`
+- [ ] New unit test: a hand-written pre-migration-shaped registry JSON (no `sourceRepo`/`pluginPath`) still round-trips through `readRegistry`/`writeRegistry`
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `src/types.ts`
+- `src/core/registry.ts`
+- `tests/unit/registry.test.ts`
+
+**Estimated scope:** Small
+
+---
+
 ## Task 35: Corroborate Grok's install/uninstall shape with a second source ✅ done
 
 **Description:** Task 31 adopted `grok plugin install git+<url> --trust` /

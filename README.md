@@ -241,7 +241,7 @@ for the full list of available events and their payload shapes.
 
 ## CLI Reference
 
-### `maui install <source> [--agent <agent-name>...] [--scope global|project]`
+### `maui install <source> [--agent <agent-name>...] [--scope global|project] [--plugin <name>...] [--all-plugins]`
 
 Fetches a plugin (a git URL, or a local path for development) and installs
 it into every agent maui detects, per that plugin's `maui.json`.
@@ -272,6 +272,36 @@ Installed example-plugin → claude-code, kiro, _default
 Skipped: gemini (not detected), cursor (no global-scope target)
 Failed: codex (Command failed (exit 1): npx codex-marketplace add … )
 ```
+
+**Installing from a multi-plugin marketplace repo** (`--source` resolving to
+a `create-marketplace`-shaped repo, see [Scaffolding](#scaffolding-a-plugin-or-marketplace))
+works too — maui never installs every plugin in the catalog silently, it
+always asks which one(s) you want:
+
+```bash
+$ maui install github.com/example-user/my-toolkit
+This is a marketplace with 2 plugins:
+  1. plugin-one — does thing one
+  2. plugin-two — does thing two
+Select plugins to install (comma-separated numbers, or "all"): 1
+
+Installed plugin-one → claude-code, kiro, _default
+```
+
+With no TTY (CI, scripts), the prompt is replaced by a hard requirement —
+pass the plugin(s) explicitly instead of guessing:
+
+```bash
+maui install github.com/example-user/my-toolkit --plugin plugin-one
+maui install github.com/example-user/my-toolkit --all-plugins
+```
+
+Each installed plugin ends up as its own independent entry in `maui
+list`/`maui update <name>`/`maui remove <name>` — exactly like installing a
+standalone single-plugin repo. See [Multi-Plugin Marketplace Install &
+Removal](SPEC.md#multi-plugin-marketplace-install--removal) in SPEC.md for
+the full per-adapter breakdown (Grok in particular switches from its direct
+git-install path to its marketplace path for this case).
 
 ### `maui list` / `maui status`
 
@@ -503,11 +533,12 @@ my-toolkit/
 │   └── plugins/
 │       └── marketplace.json       a second, minimal manifest for the generic .agents convention
 ├── gemini-extension.json          ONE file for the whole repo — see why below
-├── package.json + scripts/bump-version.ts   bumps repo-level files only
+├── package.json + scripts/bump-version.ts   bumps repo-level files only (see Versioning below)
 └── plugins/
     ├── plugin-one/
     │   ├── .claude-plugin/plugin.json
     │   ├── .codex-plugin/plugin.json
+    │   ├── maui.json                              targets pre-wired same as a standalone plugin
     │   ├── package.json + scripts/bump-version.ts   bumps THIS plugin's files + its own
     │   │                                              entry in both marketplace.json files
     │   └── skills/ agents/ commands/ rules/ prompts/ hooks/opencode-hooks.ts
@@ -521,8 +552,43 @@ entry alongside the first, without touching it. Running it again with the
 ever — that's the entire point of splitting this into three commands
 instead of one.
 
-**No `maui.json` anywhere in this shape.** That's deliberate, not an
-oversight — see the next section.
+**Each plugin gets its own `maui.json`**, unlike the repo root (which has
+none — there's no single plugin at the marketplace root to describe). This
+is what lets `maui install` reach into a multi-plugin marketplace repo and
+install one plugin at a time (see [Using What You
+Scaffolded](#using-what-you-scaffolded) below) — the same manifest also
+still works if the plugin is later split out into its own standalone repo.
+
+### Versioning: two `bump-version.ts` scripts, two different scopes
+
+A marketplace repo has a `bump-version.ts` at the root *and* one inside
+each `plugins/<name>/` folder. They never overlap in what they touch —
+running one never bumps anything the other one owns:
+
+- **Root `scripts/bump-version.ts`** — bumps only repo-level identity: the
+  root `package.json`, `.claude-plugin/marketplace.json`'s
+  `metadata.version`, `gemini-extension.json`'s `version` (this is the
+  version Gemini users see, since `gemini extensions install` treats the
+  whole repo as one extension — see [below](#the-multi-plugin-marketplace-repo-both-ways-work-too-now)),
+  and `.agents/plugins/marketplace.json`'s `version` key if present. It
+  **never** touches any individual plugin's own version or its entry
+  inside the `plugins` array of either marketplace.json file.
+- **Per-plugin `plugins/<name>/scripts/bump-version.ts`** — bumps only that
+  one plugin: its own `package.json`, `.claude-plugin/plugin.json`,
+  `.codex-plugin/plugin.json`, `maui.json`, and — the one place it reaches
+  outside its own folder — that plugin's `{ name, source, version, ... }`
+  entry inside the shared root `.claude-plugin/marketplace.json` (matched
+  by `name`, so it can't disturb a sibling plugin's entry). It **never**
+  touches the marketplace's own `metadata.version` or `gemini-extension.json`.
+
+Run the one that matches what you're actually versioning: bumping
+`plugin-one`'s release means `cd plugins/plugin-one && bun run
+version:bump`; bumping the marketplace/Gemini-extension release means
+running it from the repo root instead. There's no single command that
+bumps everything at once, by design — a marketplace's own version and one
+plugin's version are independent releases (confirmed in the real-world
+reference repo this design is grounded in: a marketplace at `1.7.1`
+cataloging a plugin at `1.2.3`).
 
 ## Using What You Scaffolded
 
@@ -556,14 +622,17 @@ grok plugin install my-plugin@my-plugin
 Both paths end up in the same place — maui's `claude-code` adapter runs
 literally those same two Claude commands under the hood.
 
-### The multi-plugin marketplace repo: native installers only
+### The multi-plugin marketplace repo: both ways work too, now
 
-**`maui install` doesn't work on this shape at all** — there's no
-`maui.json` anywhere in it, at the repo root or inside any `plugins/<name>/`
-folder. That's intentional: these structures exist specifically to support
-installing straight from each agent's own marketplace mechanism, without
-maui in the loop, which matters for a repo meant to be published and used
-by people who may not have maui installed themselves.
+Every plugin in this shape has its own `maui.json` (see
+[Scaffolding](#a-multi-plugin-marketplace-repo-maui-create-marketplace-then-maui-create-plugin-from-inside-it)),
+so `maui install github.com/example-user/my-toolkit` works exactly like the
+[standalone repo case](#the-single-plugin-repo-both-ways-work) above, just
+with a plugin-selection prompt in front of it — see the `maui install`
+entry in [CLI Reference](#cli-reference) above. It's still meant to support
+installing straight from each agent's own marketplace mechanism too,
+without maui in the loop, for people who may not have maui installed
+themselves:
 
 ```bash
 # Claude Code: add the marketplace once, then install plugins individually
@@ -578,16 +647,23 @@ npx codex-marketplace add example-user/my-toolkit --plugins
 # per-plugin granularity, which is exactly why gemini-extension.json is a
 # single repo-level file instead of one per plugin
 gemini extensions install https://github.com/example-user/my-toolkit
+
+# Grok CLI: same marketplace-add-then-install-by-name shape as Claude Code
+# (Grok's direct git+url install path is single-plugin-repo only — see
+# Multi-Plugin Marketplace Install & Removal in SPEC.md)
+grok plugin marketplace add example-user/my-toolkit
+grok plugin install plugin-one@my-toolkit
 ```
 
-**OpenCode is the odd one out here.** Since it has no marketplace CLI at
-all — installable only via maui's symlink mechanism, which needs a
-`maui.json` this shape deliberately doesn't have — a scaffolded
-`hooks/opencode-hooks.ts` inside `plugins/<name>/` has no automatic install
-path in a multi-plugin marketplace repo. Users who want it need to copy the
-file into their own `~/.config/opencode/plugins/` by hand, or you can
-convert that one plugin to a standalone repo (`maui create-plugin` in an
-empty directory) so `maui install` can reach it directly.
+**OpenCode is still the odd one out**, but no longer stuck: since it has no
+marketplace CLI of its own, it only ever installs via maui's symlink
+mechanism — which now works here too, since each plugin has its own
+`maui.json`. `maui install github.com/example-user/my-toolkit --plugin
+plugin-one` symlinks `plugin-one`'s `hooks/opencode-hooks.ts` into
+`~/.config/opencode/plugins/plugin-one.ts` the same way it would for a
+standalone repo. There's still no way to reach it purely through OpenCode's
+own tooling, since OpenCode has nothing like `claude plugin install` to
+begin with.
 
 ## Files & Directories maui Manages
 

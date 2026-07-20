@@ -219,6 +219,106 @@ safe default rather than guess.
 Neither is part of Phase 11's scope — see SPEC.md's Open Question #1 for
 the full finding.
 
+### Phase 12: Multi-Plugin Marketplace Install & Removal
+
+`maui install <source>` has assumed exactly one plugin per source since v1
+— cache keyed by `manifest.name`, one registry entry, one adapter call.
+SPEC.md's "Multi-Plugin Marketplace Install & Removal" section (added this
+session) extends that to "multi-plugin marketplace" sources (root
+`.claude-plugin/marketplace.json` cataloging `./plugins/<name>/` subfolders,
+each with its own `maui.json`): detect the shape, ask which plugin(s) to
+install, and route each through the adapter appropriate for it — Grok
+switches from its direct-git path to its marketplace path in this mode;
+Gemini (and possibly Codex, pending research) install the whole repo once
+regardless of selection, since neither has real per-plugin granularity.
+
+Research this session (three Explore passes + one Plan pass, cross-checked
+directly against source) surfaced two real correctness gaps this phase must
+close, not just extend around:
+1. `src/cli/remove.ts`'s `--purge` keys the cache-dir path by the plugin's
+   own registry name — correct today only because cache dirs happen to be
+   named after the plugin. Once marketplace-mode plugins share one cache
+   dir named after the *marketplace* instead, this silently rm's a
+   nonexistent path (swallowed by `force: true`) and leaks the real clone.
+2. `runUpdate`'s bare `maui update` loops every registry key and refetches
+   unconditionally, once per key — once N plugins share one clone, this
+   re-clones the same repo N times.
+
+**Architecture decisions:**
+- `installPlugin(source, options)` keeps its exact current signature and
+  single-plugin `InstallResult` shape — zero change for existing callers.
+  Its per-target dispatch loop is extracted into a shared internal
+  `installOnePlugin(...)`, called once by `installPlugin` (unchanged) and
+  once per selection by a new `installMarketplace(...)`; a new
+  `installFromSource(source, options)` dispatches between them based on
+  `detectSourceMode`.
+- **Walking skeleton proves the mechanism through the symlink/`_default`
+  path**, not a native adapter — the new risk (mode detection, shared-cache
+  fetch, plugin selection, N registry entries into one clone) is entirely
+  adapter-agnostic. Native adapters are proven against the now-generic loop
+  afterward, one adapter's specifics per task, same discipline as Tasks
+  13–18/Phase 11.
+- `installsWholeMarketplace?: boolean` on `NativeMarketplaceAdapter` drives
+  one shared dedup mechanism used on *both* install (skip repeat native
+  calls, still record every plugin's registry entry) and remove (skip the
+  native uninstall unless this is the last sibling referencing that
+  `sourceRepo` + agent id).
+- Registry gains `sourceRepo`/`pluginPath` on `RegistryPluginEntry`
+  (`sourceRepo` populated on every entry going forward, single-plugin
+  included, with a fallback for pre-migration entries missing it).
+- Grok's mode branch needs a real type addition: `sourceMode?: "single" |
+  "marketplace"` on `NativeAdapterRuntimeOptions`, threaded from the
+  orchestrator into every adapter call even though only Grok branches on it.
+- SPEC.md's "Detecting single-plugin vs. marketplace mode" prose reads as
+  if `marketplace.json`'s shape is checked first even with no `maui.json`
+  present at all — would break every existing single-`maui.json` fixture.
+  The actual, backward-compatible algorithm is root `maui.json` present →
+  single-plugin, full stop; only consult `marketplace.json` when it's
+  absent. Task 37 implements this and fixes SPEC.md's wording to match.
+- `create-plugin`'s per-plugin `maui.json` scaffold fix (Task 49) has no
+  code dependency on anything else in this phase — sequenced last for the
+  end-to-end "scaffold a marketplace, then install it" proof, but ships
+  independently at any point.
+
+- [ ] Task 36: Registry schema — `sourceRepo` + `pluginPath`, backward-compat fallback
+- [ ] Task 37: `detectSourceMode()` — single-plugin vs. marketplace detection (+ SPEC.md wording fix)
+- [ ] Task 38: `fetchSource()` — shared-cache-key rewrite of `fetchPlugin`, consuming Task 37
+
+### Checkpoint: Phase 12 (core primitives)
+- [ ] `bun test` passes with zero changes to any existing adapter/install/update/remove test
+- [ ] `detectSourceMode` correctly classifies: maui.json-only; maui.json+marketplace.json (self-hosted); marketplace.json-only with `./plugins/<name>` entries; neither
+- [ ] `fetchSource` on a single-plugin fixture produces a byte-identical cache dir to today's `fetchPlugin`
+
+- [ ] Task 39: Plugin selection — interactive prompt + `--plugin`/`--all-plugins` + hard error on no-TTY-no-flags
+- [ ] Task 40: `installOnePlugin` extraction + `installMarketplace`/`installFromSource` + CLI wiring, proven against symlink targets only (`_default` + one real symlink adapter)
+
+### Checkpoint: Phase 13 (walking skeleton)
+- [ ] `maui install <marketplace-fixture> --all-plugins` produces N independent registry entries sharing one `sourceRepo`, correct per-plugin `pluginPath`
+- [ ] `maui install <marketplace-fixture> --plugin a` (non-interactive) installs only `a`; no flags + no TTY hard-errors listing catalog names
+- [ ] `maui list` shows each selected plugin as its own entry
+- [ ] `installPlugin(source, options)` unchanged for every existing caller — full existing suite green
+
+- [ ] Task 41: Claude Code marketplace-mode — regression/proof only, no adapter code change expected
+- [ ] Task 42: `installsWholeMarketplace` dedup mechanism (install + remove), built against a fake test-double adapter
+- [ ] Task 43: Gemini marketplace-mode (`installsWholeMarketplace: true`)
+- [ ] Task 44: Grok marketplace-mode branching (`sourceMode` plumbing + direct-git vs. marketplace-add)
+- [ ] Task 45: Codex research — confirm or deny a per-plugin selection flag (Open Question #9), update SPEC.md either way
+- [ ] Task 46: Codex marketplace-mode wiring per Task 45's finding
+
+### Checkpoint: Phase 14 (native-marketplace adapters)
+- [ ] Every native adapter has a passing marketplace-mode integration test (fake CLI on fixture `$PATH`)
+- [ ] Removing one of two Gemini-shared plugins does not call `gemini extensions uninstall`; removing the last one does
+- [ ] A single-plugin Grok source still uses the unchanged direct-git path (regression)
+
+- [ ] Task 47: `maui update` — dedupe by `sourceRepo` for both `update <name>` and bare `update`
+- [ ] Task 48: `maui remove --purge` — fix the cache-dir-key bug + sibling-check before deleting a shared clone
+- [ ] Task 49: `create-plugin` marketplace mode generates a per-plugin `maui.json`
+
+### Checkpoint: Phase 12 (final)
+- [ ] `create-marketplace` + `create-plugin` twice (Task 49) produces a real two-plugin repo installable end to end via `maui install <repo> --all-plugins`
+- [ ] Removing one plugin leaves the shared clone and sibling's symlinks/native install intact; removing the last one purges the clone
+- [ ] `bun test`, `bun run build`, `bun run lint` all clean
+
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
@@ -227,6 +327,8 @@ the full finding.
 | Postinstall hooks execute arbitrary code | High if consent flow is skipped | Task 20 explicitly implements the ask-first/re-confirm-on-change flow as a hard acceptance criterion, not an afterthought |
 | Symlink-container conflicts across plugins | Medium — silent data loss if per-child rule has a bug | Task 5's test suite explicitly covers the multi-plugin-sharing-one-container case before any adapter is built on top of it |
 | Appending to an existing `marketplace.json` corrupts it or clobbers another plugin's entry | Medium — this is a mutation of an existing file, not just new-file creation, the first time this project does that in `create-plugin` | Task 26 matches/replaces entries by `name` (not by array index or wholesale overwrite) and has explicit test coverage for "second plugin doesn't disturb the first's entry" |
+| `--purge`'s cache-dir path is keyed by the plugin's own registry name, which stops being correct once marketplace-mode plugins share one clone named after the marketplace instead | High — a silent `rm` on a nonexistent path (swallowed by `force: true`) leaks the real shared clone forever, with no error surfaced | Task 48 fixes the lookup to use `resolvePluginCacheDir`/`sourceRepo` instead of `join(pluginsRoot, name)`, with an explicit test asserting the shared clone is actually deleted (not just that `rm` didn't throw) |
+| Bare `maui update` re-fetches once per registry key with no dedup — becomes a real, not just theoretical, inefficiency once N plugins share one clone | Medium — wasted network/disk I/O scaling with marketplace size, not a correctness bug on its own | Task 47 groups registry entries by `sourceRepo` before refreshing, one fetch per distinct shared clone |
 
 ## Open Questions
 

@@ -75,7 +75,7 @@ Dev:    bun run src/cli/index.ts -- <maui-subcommand>
 `maui` itself (v1 surface):
 
 ```
-maui install <source> [--agent <agent-name>...] [--scope global|project]
+maui install <source> [--agent <agent-name>...] [--scope global|project] [--plugin <name>...] [--all-plugins]
 maui list
 maui status
 maui update [<plugin-name>]
@@ -91,6 +91,11 @@ maui help
 - `<source>` is a git URL (or local path for local dev/testing).
 - `--agent` restricts an operation to specific agents; default is "all
   detected" for `install`, "all currently linked/installed" for `remove`.
+- `--plugin <name>` (repeatable) / `--all-plugins` only apply when
+  `<source>` resolves to a multi-plugin marketplace repo (see
+  **Multi-Plugin Marketplace Install & Removal**) — ignored for
+  single-plugin sources, where the one plugin's own `maui.json` name is
+  always used.
 - `--scope` defaults to `global`; `project` links into the current repo
   instead of the user's home directory. Only meaningful for symlink-adapter
   agents — native-marketplace agents use their own scope flags (see below).
@@ -489,11 +494,17 @@ for claude-code/codex/gemini, symlink mappings for cursor/windsurf/kiro/
 `version` across all five files in one step. `git init`, no remote, no push.
 
 **Found → marketplace mode**: creates `plugins/<plugin-name>/` inside the
-existing repo, containing only `.claude-plugin/plugin.json`,
-`.codex-plugin/plugin.json`, and the common source folders — **no**
-`marketplace.json`, `gemini-extension.json`, or `maui.json` in the plugin
-folder itself, since those are repo-level and already exist (this is the
-literal fix for "adding another plugin forces manual effort"). It then:
+existing repo, containing `.claude-plugin/plugin.json`,
+`.codex-plugin/plugin.json`, a per-plugin `maui.json` (targets pre-wired
+the same as standalone mode: `marketplace: true` for
+claude-code/codex/gemini/grok, symlink mappings for
+cursor/windsurf/kiro/`_default` — this is what lets symlink adapters and
+`maui install`'s multi-plugin selection, see **Multi-Plugin Marketplace
+Install & Removal**, operate on this one plugin independently of its
+siblings), and the common source folders — **no** `marketplace.json` or
+`gemini-extension.json` in the plugin folder itself, since those stay
+repo-level (this is the literal fix for "adding another plugin forces
+manual effort"). It then:
 
 - **Appends** an entry to the existing root `.claude-plugin/marketplace.json`'s
   `plugins` array: `{ name, source: "./plugins/<name>", description,
@@ -503,8 +514,9 @@ literal fix for "adding another plugin forces manual effort"). It then:
   `version` field, confirmed absent in the reference repo), if that file
   exists (see `create-marketplace` below).
 - Generates its own `package.json` + `scripts/bump-version.ts`, scoped to
-  just this plugin: bumps `package.json`, `.claude-plugin/plugin.json`, and
-  `.codex-plugin/plugin.json` — **and** updates this plugin's own entry
+  just this plugin: bumps `package.json`, `.claude-plugin/plugin.json`,
+  `.codex-plugin/plugin.json`, and its own `maui.json` — **and** updates
+  this plugin's own entry
   (matched by `name`) inside the shared root `.claude-plugin/marketplace.json`,
   whose entries *do* carry a `version` field, so the marketplace catalog's
   per-plugin version never drifts from the plugin's own manifest.
@@ -586,6 +598,111 @@ Thin dispatcher, not a third independent implementation:
    first plugin automatically — the user runs `create-plugin` afterward
    (from inside the new directory) to add one, which is then detected in
    marketplace mode per above.
+
+## Multi-Plugin Marketplace Install & Removal
+
+A source passed to `maui install` may be either a single-plugin repo (root
+`maui.json`, the original v1 model) or a multi-plugin marketplace repo
+(root `.claude-plugin/marketplace.json` whose `plugins` array points at
+`./plugins/<name>` subfolders — the shape `create-marketplace`/
+`create-plugin` scaffold, see **Plugin Scaffolding**). Every adapter —
+native-marketplace and symlink alike — must handle both shapes, not assume
+one plugin per source.
+
+### Detecting single-plugin vs. marketplace mode
+
+After fetching `<source>` into its cache directory, maui reads the root
+`.claude-plugin/marketplace.json` (if present) and inspects its `plugins`
+array:
+- **One entry with `source: "."` or `"./"`** → single-plugin mode,
+  unchanged from today: the one plugin's `maui.json` lives at the source
+  root.
+- **One or more entries with `source: "./plugins/<name>"`** → marketplace
+  mode: each entry names a plugin living in its own subfolder, each with
+  its own `maui.json` (`create-plugin`'s marketplace mode now generates
+  this file — see **Plugin Scaffolding**'s updated description).
+- **No `.claude-plugin/marketplace.json` at all** → existing "no manifest"
+  behavior applies unchanged (ask to treat the whole repo as a generic
+  `.agents`-fallback bundle).
+
+### Selecting which plugins to install
+
+For a marketplace-mode source, maui always asks which of the catalog's
+plugins to install — it never silently installs all of them:
+- **Interactive (TTY present)**: prints a numbered list of `name` +
+  `description` from the marketplace catalog and prompts for a
+  comma-separated selection (or `all`).
+- **Non-interactive (no TTY — CI, scripts, piped input)**: requires an
+  explicit `--plugin <name>` flag (repeatable) or `--all-plugins`; errors
+  immediately, listing the marketplace's available plugin names, rather
+  than guessing.
+- `--plugin`/`--all-plugins` skip the prompt in either interactive or
+  non-interactive contexts — an explicit flag is always consent enough.
+
+Each selected plugin then installs exactly like a single-plugin source
+today, once the per-adapter command below resolves it, and gets its own
+entry in `~/.maui/registry.json` (see **Registry tracking**) — so `maui
+list`, `maui update <plugin-name>`, and `maui remove <plugin-name>` stay
+per-plugin, unchanged in shape from the v1 model.
+
+### Per-adapter marketplace behavior
+
+- **Claude Code**: unchanged command shape — `claude plugin marketplace
+  add <owner>/<repo>` once, then `claude plugin install
+  <plugin-name>@<marketplace-name>` once per selected plugin. The only
+  change is that "which name(s)" now comes from the selection step above
+  instead of always being the source's single `maui.json` name.
+- **Codex CLI**: same shared marketplace-add-then-install-by-name shape
+  via `codex-marketplace`; the exact flag for selecting one plugin by name
+  out of a multi-plugin repo isn't yet confirmed from
+  codex-marketplace.com/docs (today's spec only documents the whole-repo
+  `--plugin` flag) — verify during Plan/Implement phase, same discipline
+  as Tasks 13–18 (see Open Questions).
+- **Gemini CLI**: no per-plugin concept exists at all (confirmed in
+  **Plugin Scaffolding** — `gemini extensions install` installs the
+  entire repo as one extension). Gemini is exempt from the selection
+  step: a marketplace-mode source installs as a single Gemini extension
+  regardless of how many plugins it catalogs, exactly as it does today.
+- **Grok CLI**: the one adapter whose *install strategy itself* branches
+  on single-plugin vs. marketplace mode, not just "which name(s)":
+  - Single-plugin source (today's behavior, unchanged): direct git
+    install, `grok plugin install git+<url> --trust`, no marketplace step.
+  - Marketplace-mode source (new): Grok's marketplace subcommands come
+    into play instead — `grok plugin marketplace add <url>` once, then
+    `grok plugin install <plugin-name>@<marketplace-name>` per selected
+    plugin, matching Claude Code's shape. Carries the same "corroborated
+    but not live-CLI-verified" caveat as Open Question #2c.
+- **Symlink adapters** (Cursor, Windsurf, Kiro, OpenCode, `.agents`
+  fallback): install each selected plugin exactly as today, except the
+  plugin's `maui.json`/source root is `<cache>/plugins/<plugin-name>/`
+  instead of the cache root.
+
+### Removal
+
+`maui remove <plugin-name>` is unchanged in shape — it always names one
+plugin, never a whole marketplace — since each plugin installed from a
+marketplace already has its own registry entry (see below). There is no
+"remove entire marketplace" command in v1; removing every plugin that
+came from one means calling `maui remove` once per plugin name (a bulk
+convenience command is a reasonable future addition, not required here).
+
+### Registry tracking
+
+`~/.maui/registry.json` gains two fields on each plugin's entry to
+support the shared-cache model:
+- `sourceRepo`: the marketplace's cache directory
+  (`~/.maui/plugins/<marketplace-name>/`), shared across every plugin
+  installed from the same marketplace source.
+- `pluginPath`: the plugin's subpath within that shared cache
+  (`plugins/<plugin-name>/`) — absent for single-plugin sources, where the
+  cache root *is* the plugin.
+
+`maui update <plugin-name>` pulls `sourceRepo`'s shared clone (a `git
+pull`, same as today), which transparently refreshes every sibling
+plugin's symlinks too since they all point back into the same clone —
+matching the existing "no re-linking needed" update guarantee. `maui
+update` with no arguments pulls each distinct `sourceRepo` once, not once
+per plugin sharing it.
 
 ## Code Style
 
@@ -679,7 +796,16 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
     artifacts; write to `contextFile`s only via the marker-block
     `upsertBlock` helper (never freeform edits) so removal can always find
     and strip what was added (see **Postinstall & Postremove Hooks**).
+  - Track each plugin installed from a multi-plugin marketplace source as
+    its own independent registry entry (`sourceRepo` + `pluginPath`), so
+    `list`/`update`/`remove` stay per-plugin regardless of how many
+    plugins share one cached clone (see **Multi-Plugin Marketplace Install
+    & Removal**).
 - **Ask first**:
+  - Which plugin(s) to install from a multi-plugin marketplace source —
+    interactively if a TTY is present, otherwise via a required explicit
+    `--plugin`/`--all-plugins` flag; never silently install every plugin
+    in the catalog.
   - Removing a plugin's cached copy (`--purge`) when it's still linked into
     one or more symlink agents.
   - Installing from a source without a `maui.json` at all (offer to treat
@@ -728,6 +854,14 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
   ships `hooks/opencode-hooks.ts` — symlinks that file into
   `~/.config/opencode/plugins/<plugin-name>.ts`, which OpenCode picks up at
   its next startup with no further action needed.
+- `maui install <marketplace-repo-url>` on a repo cataloging two plugins
+  prompts for a selection (or requires `--plugin`/`--all-plugins` with no
+  TTY), installs only the chosen plugin(s) per agent — native-marketplace
+  adapters call `install <name>@<marketplace>` once per selection; Grok
+  switches from its direct-git path to its marketplace path; symlink
+  adapters read each plugin's own subfolder `maui.json` — and each ends up
+  as its own independent `maui list`/`update`/`remove`-able entry, exactly
+  like a single-plugin install.
 - `maui update <name>` pulls the latest commit into the shared cache (for
   symlink agents) and every previously-linked agent reflects the change with
   no re-linking needed; for native-marketplace agents, `update` defers to
@@ -871,3 +1005,11 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
    docs.x.ai/build/cli/reference, which documents a `grok memory clear`
    subcommand but no filename/path, so it stays on the generic `.agents`
    convention's `AGENTS.md` fallback rather than a guess.
+9. *Open*: `codex-marketplace`'s exact flag for installing one named plugin
+   out of a multi-plugin marketplace (as opposed to its documented
+   whole-repo `--plugin` flag) isn't confirmed from
+   codex-marketplace.com/docs — needed for **Multi-Plugin Marketplace
+   Install & Removal**'s Codex CLI behavior. Verify against real
+   `--help` output/docs before implementing that adapter's marketplace-mode
+   install path; fall back to installing the whole repo (with a loud
+   warning) if no per-plugin flag can be confirmed.
