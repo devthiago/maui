@@ -281,7 +281,7 @@ close, not just extend around:
   independently at any point.
 
 - [x] Task 36: Registry schema — `sourceRepo` + `pluginPath`, backward-compat fallback
-- [ ] Task 37: `detectSourceMode()` — single-plugin vs. marketplace detection (+ SPEC.md wording fix)
+- [x] Task 37: `detectSourceMode()` — single-plugin vs. marketplace detection (+ SPEC.md wording fix)
 - [ ] Task 38: `fetchSource()` — shared-cache-key rewrite of `fetchPlugin`, consuming Task 37
 
 ### Checkpoint: Phase 12 (core primitives)

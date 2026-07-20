@@ -390,7 +390,7 @@ migrated in Tasks 40/47.
 
 ---
 
-## Task 37: `detectSourceMode()` — single-plugin vs. marketplace detection primitive
+## Task 37: `detectSourceMode()` — single-plugin vs. marketplace detection primitive ✅ done
 
 **Description:** New pure function (`src/core/source-mode.ts`), given an
 already-fetched root directory, returns a discriminated union: `{ mode:
@@ -410,18 +410,18 @@ state the maui.json-first algorithm explicitly, since that's what's
 actually backward-compatible with every existing single-plugin fixture.
 
 **Acceptance criteria:**
-- [ ] Root `maui.json` present → `{ mode: "single" }`, regardless of whether a `marketplace.json` also exists (covers the self-hosted single-plugin marketplace scaffold shape)
-- [ ] No `maui.json`, root `marketplace.json` with ≥1 `./plugins/<name>` entries → `{ mode: "marketplace", ... }` with correct `catalog`
-- [ ] No `maui.json`, no `marketplace.json` (or one with no `./plugins/` entries) → `{ mode: "none" }`
-- [ ] Malformed `marketplace.json` (not JSON, missing `plugins` array) throws a typed error, not a generic crash
-- [ ] SPEC.md's "Detecting single-plugin vs. marketplace mode" section wording matches this maui.json-first algorithm
+- [x] Root `maui.json` present → `{ mode: "single" }`, regardless of whether a `marketplace.json` also exists (covers the self-hosted single-plugin marketplace scaffold shape)
+- [x] No `maui.json`, root `marketplace.json` with ≥1 `./plugins/<name>` entries → `{ mode: "marketplace", ... }` with correct `catalog`
+- [x] No `maui.json`, no `marketplace.json` (or one with no `./plugins/` entries) → `{ mode: "none" }`
+- [x] Malformed `marketplace.json` (not JSON, missing `plugins` array) throws a typed error, not a generic crash
+- [x] SPEC.md's "Detecting single-plugin vs. marketplace mode" section wording matches this maui.json-first algorithm
 
 **Verification:**
-- [ ] `bun test tests/unit/source-mode.test.ts` — pure fixture-directory tests, no network/git
+- [x] `bun test tests/unit/source-mode.test.ts` — pure fixture-directory tests, no network/git
 
 **Dependencies:** None
 
-**Files likely touched:**
+**Files touched:**
 - `src/core/source-mode.ts` (new)
 - `tests/unit/source-mode.test.ts` (new)
 - `SPEC.md`

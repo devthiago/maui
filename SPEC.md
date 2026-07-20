@@ -611,18 +611,23 @@ one plugin per source.
 
 ### Detecting single-plugin vs. marketplace mode
 
-After fetching `<source>` into its cache directory, maui reads the root
-`.claude-plugin/marketplace.json` (if present) and inspects its `plugins`
+After fetching `<source>` into its cache directory, maui checks for a root
+`maui.json` **first, full stop** — its presence always means single-plugin
+mode, regardless of whether a `.claude-plugin/marketplace.json` also exists
+(the self-hosted single-plugin marketplace shape has both). This is what
+keeps every existing single-plugin source classified exactly as it was
+before multi-plugin sources existed.
+
+Only when `maui.json` is absent does maui consult the root
+`.claude-plugin/marketplace.json` (if present) and inspect its `plugins`
 array:
-- **One entry with `source: "."` or `"./"`** → single-plugin mode,
-  unchanged from today: the one plugin's `maui.json` lives at the source
-  root.
 - **One or more entries with `source: "./plugins/<name>"`** → marketplace
   mode: each entry names a plugin living in its own subfolder, each with
   its own `maui.json` (`create-plugin`'s marketplace mode now generates
   this file — see **Plugin Scaffolding**'s updated description).
-- **No `.claude-plugin/marketplace.json` at all** → existing "no manifest"
-  behavior applies unchanged (ask to treat the whole repo as a generic
+- **No `.claude-plugin/marketplace.json` at all, or one with no
+  `./plugins/<name>`-shaped entries** → existing "no manifest" behavior
+  applies unchanged (ask to treat the whole repo as a generic
   `.agents`-fallback bundle).
 
 ### Selecting which plugins to install
