@@ -949,7 +949,7 @@ entirely, so nothing to correct or confirm from it either way.
 
 ---
 
-## Task 31: Confirm Grok CLI argument shapes
+## Task 31: Confirm Grok CLI argument shapes ✅ done
 
 **Description:** `src/adapters/grok.ts`'s install/remove argument
 construction (`<name>@<marketplace>` qualifiers, bare `owner/repo` for
@@ -962,22 +962,35 @@ Also resolve the minor open sub-question of whether Grok's skill loader
 reads `.agents/skills/` the way OpenCode's does.
 
 **Acceptance criteria:**
-- [ ] If research contradicts the current by-analogy shape: `grok.ts` and its test are corrected (TDD — failing test first)
-- [ ] If research confirms the current shape: the code comment is updated from "by analogy" to "confirmed," citing the source
-- [ ] SPEC.md's Open Question #2c rewritten as resolved either way, including a definitive answer (not "don't rely on this until verified") for the `.agents/skills/` sub-question
+- [x] Research contradicted the current by-analogy shape: `grok.ts` and its test are corrected (TDD — failing test first)
+- [x] SPEC.md's Open Question #2c rewritten as "partially resolved," honestly: the new shape is better-informed, not docs.x.ai-primary-source-confirmed — the `.agents/skills/` sub-question stayed genuinely unanswered, no source addressed it
+
+**What actually happened:** the official docs.x.ai/build/cli/reference page
+itself never confirmed or denied the by-analogy Claude Code shape — it only
+lists subcommand names and defers to `--help`, which isn't runnable without
+a real `grok` CLI. More specific CLI usage notes surfaced during this
+session (not independently re-confirmed against docs.x.ai) describe a
+*different* install path entirely for maui's exact use case (a plain git
+repo, not a marketplace-catalog entry): `grok plugin install
+git+https://github.com/<owner>/<repo> --trust`, with removal by plain name
+(`grok plugin uninstall <plugin-name>`, no `@<marketplace>` qualifier at
+all). Adopted this since it's the most specific information available and
+directly matches maui's plugin model, but flagged in both the code comment
+and SPEC.md that it's not confirmed by the primary reference page itself —
+smoke-test against a real `grok` CLI before production use.
 
 **Verification:**
-- [ ] `bun test` on Grok's integration test file passes
-- [ ] `bun run build && bun run lint` clean
+- [x] `bun test` on `tests/integration/grok.test.ts` passes (TDD: failing then passing)
+- [x] `bun run build && bun run lint` clean
 
 **Dependencies:** None
 
-**Files likely touched:**
+**Files touched:**
 - `SPEC.md`
 - `src/adapters/grok.ts`
-- Grok's integration test file
+- `tests/integration/grok.test.ts`
 
-**Estimated scope:** Small, unless the argument shape is wrong (then Medium — it's a live behavior change)
+**Estimated scope:** Medium — the argument shape changed, a live behavior change
 
 ---
 

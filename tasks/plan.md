@@ -168,7 +168,10 @@ safe default rather than guess.
       path (Open Question #2, part of #8). Uninstall confirmed and
       implemented; project-scope contextFile path stayed genuinely
       unconfirmed and rolled into Task 33.
-- [ ] Task 31: Confirm Grok CLI argument shapes (Open Question #2c)
+- [x] Task 31: Confirm Grok CLI argument shapes (Open Question #2c) — the
+      primary reference page never confirmed or denied the old by-analogy
+      shape; adopted a more specific, session-surfaced direct-git-install
+      path instead, flagged as not fully docs.x.ai-confirmed
 - [ ] Task 32: Decide GitHub Copilot / Antigravity adapter scope (remainder
       of Open Question #1)
 - [ ] Task 33: Fill in remaining contextFile conventions for Codex, Grok,

@@ -43,7 +43,7 @@ describe("grokAdapter.detect", () => {
 });
 
 describe("grokAdapter.install", () => {
-  it("runs marketplace add then install, in order, with correct arguments", async () => {
+  it("installs directly from the plugin's git repo with the required --trust flag", async () => {
     await withFakeGrok('#!/bin/sh\necho "$@" >> "__LOG__"\nexit 0\n', async (logPath) => {
       await grokAdapter.install({
         pluginName: "example-plugin",
@@ -52,16 +52,15 @@ describe("grokAdapter.install", () => {
       });
 
       const log = await readFile(logPath, "utf-8");
-      expect(log.trim().split("\n")).toEqual([
-        "plugin marketplace add example-user/example-plugin",
-        "plugin install example-plugin@example-plugin",
-      ]);
+      expect(log.trim()).toBe(
+        "plugin install git+https://github.com/example-user/example-plugin --trust"
+      );
     });
   });
 });
 
 describe("grokAdapter.remove", () => {
-  it("runs the uninstall command with correct arguments", async () => {
+  it("runs the uninstall command by plugin name, with no marketplace qualifier", async () => {
     await withFakeGrok('#!/bin/sh\necho "$@" >> "__LOG__"\nexit 0\n', async (logPath) => {
       await grokAdapter.remove({
         pluginName: "example-plugin",
@@ -70,7 +69,7 @@ describe("grokAdapter.remove", () => {
       });
 
       const log = await readFile(logPath, "utf-8");
-      expect(log.trim()).toBe("plugin uninstall example-plugin@example-plugin");
+      expect(log.trim()).toBe("plugin uninstall example-plugin");
     });
   });
 });

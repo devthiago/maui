@@ -171,21 +171,25 @@ Cursor/Windsurf.
     research (only `list` and `install` were documented) — verify
     `gemini extensions uninstall <name>` during Plan phase before relying on
     it.
-- **Grok CLI** — non-interactive `grok` CLI subcommands, confirmed via
-  docs.x.ai/build/cli/reference (mirrors Claude Code's shape closely):
-  - Marketplace: `grok plugin marketplace <list|add|remove|update>`
-  - Plugin: `grok plugin <list|install|uninstall|update|enable|disable|details|validate>`
-  - Install: `grok plugin marketplace add <source>` then
-    `grok plugin install <plugin-name>` (or `<plugin-name>@<marketplace>`,
-    matching Claude Code's shape — see below)
-  - Remove: `grok plugin uninstall <plugin-name>`
-  - The reference page names these subcommands but doesn't spell out
-    argument formats (owner/repo shorthand vs. full git URL for
-    `marketplace add`; whether `install`/`uninstall` need a
-    `<name>@<marketplace>` qualifier like Claude Code's; exact scope flags).
-    Confirm via `grok plugin --help` / `grok plugin marketplace --help`
-    during Plan-phase implementation — this is a small syntax check, not a
-    structural uncertainty (see Open Questions).
+- **Grok CLI** — non-interactive `grok` CLI subcommands. Subcommand names
+  (`grok plugin <list|install|uninstall|update|enable|disable|details|validate>`,
+  `grok plugin marketplace <list|add|remove|update>`) are confirmed to exist
+  at docs.x.ai/build/cli/reference, but that page itself stays silent on
+  argument syntax and directs readers to `grok <subcommand> --help`. Since
+  maui plugins are git repos rather than marketplace-catalog entries, maui
+  uses Grok's documented direct path for that exact case ("install plugins
+  outside the marketplace" via a `git+<url>` source) instead of the
+  marketplace-add-then-install-by-name flow used for Claude Code:
+  - Install: `grok plugin install git+https://github.com/<owner>/<repo> --trust`
+    — no marketplace step, no `<name>@<marketplace>` qualifier; `--trust` is
+    required for any non-marketplace source
+  - Remove: `grok plugin uninstall <plugin-name>` — plain name, since a
+    plugin installed directly from git is identified by name afterward
+  - This argument shape is **not confirmed by docs.x.ai's own primary
+    reference page** — it's the most specific information available as of
+    this writing (see Open Question #2c), not a live-CLI-verified fact. A
+    wrong guess fails loudly with the real `grok` CLI's own error output,
+    not silently.
   - Also file-based (background, from docs.x.ai/build/features/skills-plugins-marketplaces):
     plugins live in `~/.grok/plugins/` (global) / `./.grok/plugins/`
     (project); marketplace sources track in `~/.grok/config.toml`
@@ -775,17 +779,19 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
     be a distinct, optional mechanism (declaring an npm package in
     `opencode.json`'s `plugin` array) unrelated to how maui itself installs
     OpenCode plugins.
-2c. Grok CLI's `grok plugin marketplace add|remove` and
-    `grok plugin install|uninstall` are confirmed to exist
-    (docs.x.ai/build/cli/reference), but the reference page doesn't spell
-    out argument formats — confirm via `--help` before implementing
-    `grok.ts`: does `marketplace add` take `owner/repo` shorthand like
-    Claude Code, or does it need a full URL? Do `install`/`uninstall` need a
-    `<name>@<marketplace>` qualifier, or just `<name>`? What are the
-    scope flags (global/project equivalent)? Also unconfirmed: whether
-    Grok's skill loader reads `.agents/skills/` the way OpenCode's does —
-    don't rely on the always-on `.agents` fallback reaching Grok until
-    verified.
+2c. *Partially resolved*: `grok.ts` now uses Grok's documented direct
+    git-install path (`grok plugin install git+<url> --trust`, no
+    `<name>@<marketplace>` qualifier) instead of the previous
+    marketplace-add-then-install-by-name guess — see **Native-marketplace
+    adapters** above. This is a better-informed answer, not a fully
+    docs.x.ai-confirmed one: the primary reference page
+    (docs.x.ai/build/cli/reference) still only names the subcommands
+    without spelling out argument formats or scope flags. Smoke-test
+    against a real `grok` CLI before depending on this in production.
+    Still genuinely unconfirmed: whether Grok's skill loader reads
+    `.agents/skills/` the way OpenCode's does — no source checked so far
+    addresses it either way; don't rely on the always-on `.agents` fallback
+    reaching Grok specifically until verified.
 3. *Resolved*: the "self-hosted single-plugin marketplace" pattern (a repo
    containing both `.claude-plugin/plugin.json` and a self-cataloging
    `.claude-plugin/marketplace.json` with `plugins: [{ name, source: "." }]`)
