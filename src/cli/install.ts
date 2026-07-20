@@ -11,6 +11,7 @@ import { getNativeMarketplaceAdapter, getSymlinkAdapter } from "../adapters/regi
 import { isNativeMarketplaceTarget } from "../types";
 import { selectPlugins, type PluginSelectionOptions } from "../core/plugin-selection";
 import { MarketplaceModeMismatchError } from "../core/errors";
+import { shouldSkipNativeInstall } from "../core/native-dedup";
 import type {
   InstalledAgentEntry,
   NativeMarketplaceIdentity,
@@ -122,7 +123,8 @@ async function installOnePlugin(
   source: string,
   sourceRepo: string,
   pluginPath: string | undefined,
-  options: InstallOptions
+  options: InstallOptions,
+  wholeMarketplaceInstalled: Set<string> = new Set()
 ): Promise<InstallResult> {
   const home = options.home ?? homedir();
   const cwd = options.cwd ?? process.cwd();
@@ -157,7 +159,10 @@ async function installOnePlugin(
 
       try {
         const identity = resolveNativeIdentity(manifest, target, source);
-        await adapter.install(identity, { home, confirm: options.confirm });
+        const dedupeKey = `${sourceRepo}:${agentId}`;
+        if (!shouldSkipNativeInstall(adapter, dedupeKey, wholeMarketplaceInstalled)) {
+          await adapter.install(identity, { home, confirm: options.confirm });
+        }
         const contextFiles = await runPostinstallForAgent(
           manifest,
           pluginDir,
@@ -267,12 +272,21 @@ async function installFetchedMarketplace(
   options: InstallOptions & PluginSelectionOptions
 ): Promise<InstallResult[]> {
   const selected = await selectPlugins(fetched.catalog, options);
+  const wholeMarketplaceInstalled = new Set<string>();
   const results: InstallResult[] = [];
   for (const entry of selected) {
     const pluginDir = join(fetched.cacheDir, entry.pluginPath);
     const manifest = await readManifest(pluginDir);
     results.push(
-      await installOnePlugin(pluginDir, manifest, source, fetched.cacheDir, entry.pluginPath, options)
+      await installOnePlugin(
+        pluginDir,
+        manifest,
+        source,
+        fetched.cacheDir,
+        entry.pluginPath,
+        options,
+        wholeMarketplaceInstalled
+      )
     );
   }
   return results;

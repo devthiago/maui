@@ -299,7 +299,7 @@ close, not just extend around:
 - [x] `installPlugin(source, options)` unchanged for every existing caller — full existing suite green
 
 - [x] Task 41: Claude Code marketplace-mode — regression/proof only, no adapter code change expected (confirmed: 2 selections produce 2 `marketplace add` + 2 `plugin install` calls, not 1+2 — harmless, no dedup needed for Claude)
-- [ ] Task 42: `installsWholeMarketplace` dedup mechanism (install + remove), built against a fake test-double adapter
+- [x] Task 42: `installsWholeMarketplace` dedup mechanism (install + remove), built against a fake test-double adapter
 - [ ] Task 43: Gemini marketplace-mode (`installsWholeMarketplace: true`)
 - [ ] Task 44: Grok marketplace-mode branching (`sourceMode` plumbing + direct-git vs. marketplace-add)
 - [ ] Task 45: Codex research — confirm or deny a per-plugin selection flag (Open Question #9), update SPEC.md either way

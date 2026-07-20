@@ -95,4 +95,15 @@ export interface NativeMarketplaceAdapter {
   detect(): Promise<boolean>;
   install(identity: NativeMarketplaceIdentity, options?: NativeAdapterRuntimeOptions): Promise<void>;
   remove(identity: NativeMarketplaceIdentity, options?: NativeAdapterRuntimeOptions): Promise<void>;
+  /**
+   * Set when this agent's own CLI installs an entire marketplace repo as
+   * one unit with no per-plugin granularity (e.g. Gemini's `extensions
+   * install <repo>`) — as opposed to genuinely installing/uninstalling one
+   * named plugin at a time (Claude Code, Grok in marketplace mode). Drives
+   * the install/remove dedup in `core/native-dedup.ts`: the native call
+   * fires once per marketplace source rather than once per selected
+   * plugin, and removing one plugin never tears down the shared install
+   * while a sibling plugin from the same source still depends on it.
+   */
+  installsWholeMarketplace?: boolean;
 }

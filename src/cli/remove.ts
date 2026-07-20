@@ -8,6 +8,7 @@ import { PluginNotFoundError } from "../core/errors";
 import { getNativeMarketplaceAdapter } from "../adapters/registry";
 import { stripBlock } from "../core/postinstall";
 import { confirm as confirmLine } from "../core/prompt";
+import { shouldSkipNativeRemove } from "../core/native-dedup";
 
 export { PluginNotFoundError };
 
@@ -44,7 +45,10 @@ export async function removePlugin(name: string, options: RemoveOptions = {}): P
     } else if (agentEntry.kind === "native-marketplace" && agentEntry.identity) {
       const adapter = getNativeMarketplaceAdapter(agentEntry.agent);
       if (adapter) {
-        await adapter.remove(agentEntry.identity, { home });
+        const skip = shouldSkipNativeRemove(adapter, registry, name, entry.sourceRepo, agentEntry.agent);
+        if (!skip) {
+          await adapter.remove(agentEntry.identity, { home });
+        }
       }
     }
 

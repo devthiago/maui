@@ -218,7 +218,7 @@ records `gemini` as installed via that one call.
 
 ---
 
-## Task 42: `installsWholeMarketplace` dedup mechanism (install + remove)
+## Task 42: `installsWholeMarketplace` dedup mechanism (install + remove) ✅ done
 
 **Description:** Add `installsWholeMarketplace?: boolean` to
 `NativeMarketplaceAdapter` (`src/types.ts`). In `installMarketplace`'s
@@ -233,19 +233,21 @@ still has an agent entry for that same agent ID — if found, skip the native
 association), only calling it when this is the last sibling.
 
 **Acceptance criteria:**
-- [ ] A fake `installsWholeMarketplace` test-double adapter invoked with 3 selections calls `.install()` exactly once
-- [ ] Removing one of those 3 plugins (siblings still registered) does not call `.remove()`; removing the last of the 3 does
-- [ ] Non-flagged adapters (Claude Code, Grok in marketplace mode) are completely unaffected — regression test against Task 41
+- [x] A fake `installsWholeMarketplace` test-double adapter invoked with 3 selections calls `.install()` exactly once (verified at the pure-function level: `shouldSkipNativeInstall` returns false once then true for the same dedupe key)
+- [x] Removing one of those 3 plugins (siblings still registered) does not call `.remove()`; removing the last of the 3 does (`shouldSkipNativeRemove`)
+- [x] Non-flagged adapters (Claude Code, Grok in marketplace mode) are completely unaffected — Task 41's existing test + full suite regression confirms this
 
 **Verification:**
-- [ ] `bun test tests/unit/native-dedup.test.ts` (new, using a fake adapter, not a real one)
+- [x] `bun test tests/unit/native-dedup.test.ts` (new, using literal fake adapter objects, not real ones or the adapter registry)
+- [x] Full suite/build/lint green
 
 **Dependencies:** Task 40
 
-**Files likely touched:**
-- `src/types.ts`
-- `src/cli/install.ts`
-- `src/cli/remove.ts`
+**Files touched:**
+- `src/types.ts` (`installsWholeMarketplace?` on `NativeMarketplaceAdapter`)
+- `src/core/native-dedup.ts` (new — `shouldSkipNativeInstall`/`shouldSkipNativeRemove` as pure, independently-testable functions, rather than baking the logic directly into `install.ts`/`remove.ts` — lets the dedup decision be tested with a literal fake adapter with no dependency on the real adapter registry)
+- `src/cli/install.ts` (`installOnePlugin` takes a shared `Set` threaded through `installFetchedMarketplace`'s loop)
+- `src/cli/remove.ts` (`removePlugin`'s native branch consults `shouldSkipNativeRemove` before calling `adapter.remove()`)
 - `tests/unit/native-dedup.test.ts` (new)
 
 **Estimated scope:** Medium
