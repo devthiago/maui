@@ -161,7 +161,7 @@ research-before-implementing discipline (Tasks 29–35).
 
 ---
 
-## Task 44: Grok marketplace-mode branching
+## Task 44: Grok marketplace-mode branching ✅ done
 
 **Description:** Add `sourceMode?: "single" | "marketplace"` to
 `NativeAdapterRuntimeOptions` (`src/types.ts`), threaded from
@@ -174,19 +174,21 @@ unchanged direct-git path (`grok plugin install git+<url> --trust`);
 matching Claude Code's shape. `remove()` mirrors the same branch.
 
 **Acceptance criteria:**
-- [ ] Single-plugin source still produces the exact same `git+<url> --trust` command as today (regression)
-- [ ] Marketplace-mode source with N selections produces one `marketplace add` + N `install <name>@<marketplace>` calls
-- [ ] Existing `tests/integration/grok.test.ts` passes unmodified
+- [x] Single-plugin source still produces the exact same `git+<url> --trust` command as today (regression)
+- [x] Marketplace-mode source with N selections produces `marketplace add` + `install <name>@<marketplace>` calls per selection (same "no dedup for Grok, like Claude" shape confirmed in Task 41 — not a single deduped `marketplace add`, since Grok isn't an `installsWholeMarketplace` adapter)
+- [x] Existing `tests/integration/grok.test.ts` passes unmodified
 
 **Verification:**
-- [ ] `bun test tests/integration/grok.test.ts tests/integration/grok-marketplace.test.ts` (new)
+- [x] `bun test tests/integration/grok.test.ts tests/integration/grok-marketplace.test.ts` (new)
+- [x] Full suite/build/lint green
 
 **Dependencies:** Task 40
 
-**Files likely touched:**
-- `src/types.ts`
-- `src/adapters/grok.ts`
-- `src/cli/install.ts` (thread `sourceMode` through)
+**Files touched:**
+- `src/types.ts` (`sourceMode` on `NativeAdapterRuntimeOptions`)
+- `src/adapters/grok.ts` (branches `install()`/`remove()` on `options?.sourceMode`)
+- `src/cli/install.ts` (threads `sourceMode: pluginPath ? "marketplace" : "single"` into `adapter.install()`)
+- `src/cli/remove.ts` (threads `sourceMode` from `entry.pluginPath` into `adapter.remove()`)
 - `tests/integration/grok-marketplace.test.ts` (new)
 
 **Estimated scope:** Medium

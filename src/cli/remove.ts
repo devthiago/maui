@@ -47,7 +47,10 @@ export async function removePlugin(name: string, options: RemoveOptions = {}): P
       if (adapter) {
         const skip = shouldSkipNativeRemove(adapter, registry, name, entry.sourceRepo, agentEntry.agent);
         if (!skip) {
-          await adapter.remove(agentEntry.identity, { home });
+          await adapter.remove(agentEntry.identity, {
+            home,
+            sourceMode: entry.pluginPath ? "marketplace" : "single",
+          });
         }
       }
     }

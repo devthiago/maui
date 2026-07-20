@@ -172,7 +172,11 @@ async function installOnePlugin(
         const identity = resolveNativeIdentity(manifest, target, source, wholeMarketplaceName);
         const dedupeKey = `${sourceRepo}:${agentId}`;
         if (!shouldSkipNativeInstall(adapter, dedupeKey, wholeMarketplaceInstalled)) {
-          await adapter.install(identity, { home, confirm: options.confirm });
+          await adapter.install(identity, {
+            home,
+            confirm: options.confirm,
+            sourceMode: pluginPath ? "marketplace" : "single",
+          });
         }
         const contextFiles = await runPostinstallForAgent(
           manifest,

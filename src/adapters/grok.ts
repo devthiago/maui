@@ -22,6 +22,12 @@ import type { NativeMarketplaceAdapter } from "../types";
  * loudly with the real `grok` CLI's own error output (via
  * NativeInstallError), not silently — smoke-test against a real `grok`
  * CLI before relying on this in production.
+ *
+ * Grok is the one adapter whose *install strategy itself* branches on
+ * `options.sourceMode`, not just "which name(s)" — a multi-plugin
+ * marketplace source switches to the same marketplace-add-then-
+ * install-by-name shape Claude Code uses, since maui's direct-git path
+ * only makes sense for a single-plugin repo.
  */
 export const grokAdapter: NativeMarketplaceAdapter = {
   id: "grok",
@@ -31,7 +37,22 @@ export const grokAdapter: NativeMarketplaceAdapter = {
     return resolveBinary("grok") !== null;
   },
 
-  async install(identity) {
+  async install(identity, options) {
+    if (options?.sourceMode === "marketplace") {
+      await runNativeCommand("grok", [
+        "plugin",
+        "marketplace",
+        "add",
+        `https://github.com/${identity.repo}`,
+      ]);
+      await runNativeCommand("grok", [
+        "plugin",
+        "install",
+        `${identity.pluginName}@${identity.marketplaceName}`,
+      ]);
+      return;
+    }
+
     await runNativeCommand("grok", [
       "plugin",
       "install",
@@ -40,7 +61,16 @@ export const grokAdapter: NativeMarketplaceAdapter = {
     ]);
   },
 
-  async remove(identity) {
+  async remove(identity, options) {
+    if (options?.sourceMode === "marketplace") {
+      await runNativeCommand("grok", [
+        "plugin",
+        "uninstall",
+        `${identity.pluginName}@${identity.marketplaceName}`,
+      ]);
+      return;
+    }
+
     await runNativeCommand("grok", ["plugin", "uninstall", identity.pluginName]);
   },
 };

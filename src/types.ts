@@ -87,6 +87,15 @@ export interface NativeMarketplaceIdentity {
 export interface NativeAdapterRuntimeOptions {
   home?: string;
   confirm?: (message: string) => Promise<boolean>;
+  /**
+   * Whether the source being installed/removed is a multi-plugin
+   * marketplace or a single-plugin source. Threaded to every adapter call
+   * uniformly, but only Grok's adapter currently branches on it — its
+   * install strategy itself differs (direct git-install vs.
+   * marketplace-add-then-install-by-name), unlike every other adapter
+   * where only "which name(s)" changes.
+   */
+  sourceMode?: "single" | "marketplace";
 }
 
 export interface NativeMarketplaceAdapter {
