@@ -671,8 +671,15 @@ per-plugin, unchanged in shape from the v1 model.
 - **Gemini CLI**: no per-plugin concept exists at all (confirmed in
   **Plugin Scaffolding** — `gemini extensions install` installs the
   entire repo as one extension). Gemini is exempt from the selection
-  step: a marketplace-mode source installs as a single Gemini extension
-  regardless of how many plugins it catalogs, exactly as it does today.
+  step in the sense that its install call fires once regardless of how
+  many plugins were selected — but it isn't exempt from selection
+  entirely, since only selected plugins' registry entries record it as
+  installed. `gemini extensions uninstall <name>` also identifies the
+  installed extension by the *marketplace's* own name, not any one
+  plugin's — maui resolves `identity.pluginName` accordingly for
+  `installsWholeMarketplace` adapters (falls back to the marketplace's
+  name instead of the individual plugin's `manifest.name`), so removal
+  targets the extension that was actually installed.
 - **Grok CLI**: the one adapter whose *install strategy itself* branches
   on single-plugin vs. marketplace mode, not just "which name(s)":
   - Single-plugin source (today's behavior, unchanged): direct git

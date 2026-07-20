@@ -193,7 +193,7 @@ matching Claude Code's shape. `remove()` mirrors the same branch.
 
 ---
 
-## Task 43: Gemini marketplace-mode
+## Task 43: Gemini marketplace-mode ✅ done
 
 **Description:** Set `installsWholeMarketplace: true` on `geminiAdapter`.
 Verify end-to-end with the real adapter (fake `gemini` on fixture `$PATH`)
@@ -202,17 +202,33 @@ install <repo>` exactly once, and every selected plugin's registry entry
 records `gemini` as installed via that one call.
 
 **Acceptance criteria:**
-- [ ] N-selection install fires `gemini extensions install` exactly once
-- [ ] Removing all-but-one selected plugin never calls `gemini extensions uninstall`; removing the last one does
+- [x] N-selection install fires `gemini extensions install` exactly once
+- [x] Removing all-but-one selected plugin never calls `gemini extensions uninstall`; removing the last one does
+
+**What actually happened — a real bug found beyond the plan's scope:**
+`geminiAdapter.remove()` calls `gemini extensions uninstall identity.pluginName`. Setting
+`installsWholeMarketplace: true` alone wasn't sufficient — `identity.pluginName`
+defaulted to each plugin's own `manifest.name` (e.g. "plugin-one"), but Gemini
+installed the extension under the *marketplace's* name (e.g. "my-toolkit").
+Uninstalling would have targeted a nonexistent extension. Fixed by extending
+`resolveNativeIdentity` (`src/cli/install.ts`) to accept an optional
+`wholeMarketplaceName` fallback, computed at the call site as
+`basename(sourceRepo)` whenever `adapter.installsWholeMarketplace` is set and
+the plugin came from a marketplace source (`pluginPath` defined) — an explicit
+`target.plugin` override still wins. Caught by writing the removal test before
+the fix, per this project's TDD discipline.
 
 **Verification:**
-- [ ] `bun test tests/integration/gemini-marketplace.test.ts` (new)
+- [x] `bun test tests/integration/gemini-marketplace.test.ts` (new) — first run reproduced both the "should install once" and "should uninstall by marketplace name" failures before the fix
+- [x] Full suite/build/lint green
 
 **Dependencies:** Task 42
 
-**Files likely touched:**
-- `src/adapters/gemini.ts`
+**Files touched:**
+- `src/adapters/gemini.ts` (`installsWholeMarketplace: true`)
+- `src/cli/install.ts` (`resolveNativeIdentity`'s `wholeMarketplaceName` fallback)
 - `tests/integration/gemini-marketplace.test.ts` (new)
+- `SPEC.md` (documented the pluginName-resolution fix under the Gemini bullet)
 
 **Estimated scope:** Small
 

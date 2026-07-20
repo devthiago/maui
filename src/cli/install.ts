@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fetchSource, type FetchedSource } from "../core/fetch";
 import { readManifest } from "../core/manifest";
 import { linkChildren } from "../core/linker";
@@ -38,13 +38,22 @@ export interface InstallResult {
   failed: string[];
 }
 
+/**
+ * `wholeMarketplaceName`, when given, stands in for the individual
+ * plugin's own name as the pluginName fallback — needed for adapters like
+ * Gemini whose `installsWholeMarketplace` means the installed "thing" is
+ * identified by the marketplace's own name (matching what its install
+ * command actually registered), not any one plugin's name. An explicit
+ * `target.plugin` override still wins over both.
+ */
 function resolveNativeIdentity(
   manifest: PluginManifest,
   target: NativeMarketplaceTarget,
-  source: string
+  source: string,
+  wholeMarketplaceName?: string
 ): NativeMarketplaceIdentity {
   const repo = target.repo ?? source;
-  const pluginName = target.plugin ?? manifest.name;
+  const pluginName = target.plugin ?? wholeMarketplaceName ?? manifest.name;
   const marketplaceName =
     target.marketplaceName ?? repo.split("/").pop()?.replace(/\.git$/, "") ?? manifest.name;
 
@@ -158,7 +167,9 @@ async function installOnePlugin(
       }
 
       try {
-        const identity = resolveNativeIdentity(manifest, target, source);
+        const wholeMarketplaceName =
+          adapter.installsWholeMarketplace && pluginPath ? basename(sourceRepo) : undefined;
+        const identity = resolveNativeIdentity(manifest, target, source, wholeMarketplaceName);
         const dedupeKey = `${sourceRepo}:${agentId}`;
         if (!shouldSkipNativeInstall(adapter, dedupeKey, wholeMarketplaceInstalled)) {
           await adapter.install(identity, { home, confirm: options.confirm });

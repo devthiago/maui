@@ -12,6 +12,13 @@ import type { NativeMarketplaceAdapter } from "../types";
 export const geminiAdapter: NativeMarketplaceAdapter = {
   id: "gemini",
   kind: "native-marketplace",
+  /**
+   * `gemini extensions install <repo>` installs the entire repo as one
+   * extension — there's no per-plugin granularity, so a marketplace-mode
+   * source only ever needs one install call regardless of how many
+   * plugins were selected (see core/native-dedup.ts).
+   */
+  installsWholeMarketplace: true,
 
   async detect() {
     return resolveBinary("gemini") !== null;
