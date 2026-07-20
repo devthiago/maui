@@ -303,12 +303,12 @@ close, not just extend around:
 - [x] Task 43: Gemini marketplace-mode (`installsWholeMarketplace: true`) — also fixed a real bug: `identity.pluginName` must resolve to the marketplace's own name for whole-marketplace adapters, not each plugin's name, or `uninstall` would target a nonexistent extension
 - [x] Task 44: Grok marketplace-mode branching (`sourceMode` plumbing + direct-git vs. marketplace-add)
 - [x] Task 45: Codex research — confirm or deny a per-plugin selection flag (Open Question #9), update SPEC.md either way — **confirmed** Codex supports genuine per-plugin selection via a direct-path `--plugin` flag, overturning the plan's "likely whole-repo-only" assumption; Task 46 implements normal per-plugin wiring, not `installsWholeMarketplace`
-- [ ] Task 46: Codex marketplace-mode wiring per Task 45's finding
+- [x] Task 46: Codex marketplace-mode wiring per Task 45's finding — normal per-plugin selection via a direct repository path (`pluginPath` added to `NativeMarketplaceIdentity`), not `installsWholeMarketplace`
 
 ### Checkpoint: Phase 14 (native-marketplace adapters)
-- [ ] Every native adapter has a passing marketplace-mode integration test (fake CLI on fixture `$PATH`)
-- [ ] Removing one of two Gemini-shared plugins does not call `gemini extensions uninstall`; removing the last one does
-- [ ] A single-plugin Grok source still uses the unchanged direct-git path (regression)
+- [x] Every native adapter has a passing marketplace-mode integration test (fake CLI on fixture `$PATH`)
+- [x] Removing one of two Gemini-shared plugins does not call `gemini extensions uninstall`; removing the last one does
+- [x] A single-plugin Grok source still uses the unchanged direct-git path (regression)
 
 - [ ] Task 47: `maui update` — dedupe by `sourceRepo` for both `update <name>` and bare `update`
 - [ ] Task 48: `maui remove --purge` — fix the cache-dir-key bug + sibling-check before deleting a shared clone

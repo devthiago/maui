@@ -50,14 +50,15 @@ function resolveNativeIdentity(
   manifest: PluginManifest,
   target: NativeMarketplaceTarget,
   source: string,
-  wholeMarketplaceName?: string
+  wholeMarketplaceName?: string,
+  pluginPath?: string
 ): NativeMarketplaceIdentity {
   const repo = target.repo ?? source;
   const pluginName = target.plugin ?? wholeMarketplaceName ?? manifest.name;
   const marketplaceName =
     target.marketplaceName ?? repo.split("/").pop()?.replace(/\.git$/, "") ?? manifest.name;
 
-  return { pluginName, repo, marketplaceName, package: target.package };
+  return { pluginName, repo, marketplaceName, package: target.package, pluginPath };
 }
 
 async function runPostinstallForAgent(
@@ -169,7 +170,7 @@ async function installOnePlugin(
       try {
         const wholeMarketplaceName =
           adapter.installsWholeMarketplace && pluginPath ? basename(sourceRepo) : undefined;
-        const identity = resolveNativeIdentity(manifest, target, source, wholeMarketplaceName);
+        const identity = resolveNativeIdentity(manifest, target, source, wholeMarketplaceName, pluginPath);
         const dedupeKey = `${sourceRepo}:${agentId}`;
         if (!shouldSkipNativeInstall(adapter, dedupeKey, wholeMarketplaceInstalled)) {
           await adapter.install(identity, {

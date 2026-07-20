@@ -103,31 +103,34 @@ plugin name that benefited from that one refresh.
 
 ---
 
-## Task 46: Codex marketplace-mode wiring
+## Task 46: Codex marketplace-mode wiring ✅ done
 
-**Description:** Implement per Task 45's finding. Most likely outcome (per
-current evidence — `codex-marketplace`'s documented multi-plugin command is
-`add <repo> --plugins`, plural, no name argument, crawling the whole
-`plugins/` folder): no per-plugin selection flag exists, so `codexAdapter`
-gets `installsWholeMarketplace: true` (Task 42's mechanism, same as Gemini)
-plus a loud, explicit warning surfaced to the user whenever the selection
-excludes at least one catalogued plugin, stating that Codex installs the
-whole marketplace regardless of selection. If Task 45 *does* confirm a
-per-plugin flag, implement the normal per-selection loop instead (Task 41's
-shape).
+**Description:** Task 45 confirmed a per-plugin flag exists, so this
+implements the normal per-selection path (Task 41's shape), **not**
+`installsWholeMarketplace`. `codex-marketplace`'s singular `--plugin` flag
+selects one plugin by direct repository path (`<repo>/<pluginPath>`), not
+by a name argument — a different mechanism from Claude's `<name>@<marketplace>`
+qualifier, so this needed a new `pluginPath` field threaded through
+`NativeMarketplaceIdentity` (populated from `installOnePlugin`'s existing
+`pluginPath` param via `resolveNativeIdentity`) rather than reusing
+Claude's/Grok's `sourceMode` branch alone.
 
 **Acceptance criteria:**
-- [ ] Behavior matches whichever branch Task 45 confirmed, with a code comment citing the specific doc/`--help` output relied on
-- [ ] If whole-repo-only: a partial selection (2 of 3 catalogued plugins) still surfaces a clear warning naming the excluded plugin(s)
+- [x] Behavior matches Task 45's confirmed per-plugin direct-path shape, with a code comment citing codex-marketplace.com/docs
+- [x] Marketplace-mode install builds `<owner>/<repo>/<pluginPath> --plugin --global`, once per selected plugin
+- [x] Single-plugin source unaffected (regression) — repo root already is the "direct path" to the one plugin, so no branching was needed there
+- [x] `remove()` unaffected by `sourceMode`/`pluginPath` either way, confirmed unchanged by Task 45's research
 
 **Verification:**
-- [ ] `bun test tests/integration/codex-marketplace.test.ts` (new)
+- [x] `bun test tests/integration/codex-marketplace.test.ts` (new)
+- [x] Full suite/build/lint green
 
 **Dependencies:** Task 42, Task 45
 
-**Files likely touched:**
-- `src/adapters/codex.ts`
-- `src/cli/install.ts` (warning surface)
+**Files touched:**
+- `src/types.ts` (`pluginPath?` on `NativeMarketplaceIdentity`)
+- `src/cli/install.ts` (`resolveNativeIdentity` accepts and forwards `pluginPath`)
+- `src/adapters/codex.ts` (`install()` appends `identity.pluginPath` to the repo path when present)
 - `tests/integration/codex-marketplace.test.ts` (new)
 
 **Estimated scope:** Medium

@@ -26,6 +26,17 @@ async function ensureConsent(options: NativeAdapterRuntimeOptions): Promise<void
  * remove first confirms the user is fine with maui invoking it, once per
  * machine (tracked in ~/.maui/config.json), since this is a genuine
  * supply-chain trust decision distinct from installing a plugin itself.
+ *
+ * Selecting one plugin out of a multi-plugin marketplace repo uses a
+ * different mechanism than Claude Code's/Grok's `<name>@<marketplace>`
+ * qualifier: codex-marketplace's singular `--plugin` flag takes a direct
+ * repository path to the one plugin (`<repo>/<pluginPath>`), confirmed at
+ * codex-marketplace.com/docs — "singular flags only [work] with a direct
+ * repository path such as owner/repo/plugins/name". For a single-plugin
+ * source, the repo root already *is* that direct path, so this needs no
+ * branching beyond appending `identity.pluginPath` when present. `remove`
+ * is unaffected either way — `codex-marketplace remove <plugin>` always
+ * takes the plugin's own name, confirmed unchanged for both source shapes.
  */
 export const codexAdapter: NativeMarketplaceAdapter = {
   id: "codex",
@@ -37,7 +48,8 @@ export const codexAdapter: NativeMarketplaceAdapter = {
 
   async install(identity, options = {}) {
     await ensureConsent(options);
-    await runNativeCommand("npx", ["codex-marketplace", "add", identity.repo, "--plugin", "--global"]);
+    const repoPath = identity.pluginPath ? `${identity.repo}/${identity.pluginPath}` : identity.repo;
+    await runNativeCommand("npx", ["codex-marketplace", "add", repoPath, "--plugin", "--global"]);
   },
 
   async remove(identity, options = {}) {

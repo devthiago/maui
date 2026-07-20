@@ -82,6 +82,14 @@ export interface NativeMarketplaceIdentity {
   repo: string;
   marketplaceName: string;
   package?: string;
+  /**
+   * Relative subpath within `repo` where this plugin's own source lives
+   * (e.g. "plugins/plugin-one"), set only for marketplace-mode installs.
+   * Codex's adapter uses this to build a direct-path `--plugin` argument
+   * (`<repo>/<pluginPath>`) since `codex-marketplace` selects one plugin
+   * out of a multi-plugin repo by path, not by a separate name argument.
+   */
+  pluginPath?: string;
 }
 
 export interface NativeAdapterRuntimeOptions {
