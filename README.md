@@ -1,6 +1,8 @@
-# maui
+<p align="center">
+  <img src="assets/maui-logo.png" alt="maui" width="500">
+</p>
 
-**maui** stands for **M**ulti **A**gents **U**nique **I**nstall.
+**🪝maui** stands for **M**ulti **A**gents **U**nique **I**nstall.
 
 **A global, multi-agent toolset installer.** One command installs a plugin's
 skills, agents, commands, rules, and hooks into whichever AI coding agents

@@ -20,7 +20,7 @@ export function knownSubcommand(name: string): boolean {
 
 export function helpText(): string {
   const lines = [
-    "maui — Global Multi-Agent Toolset Installer",
+    "🪝maui — Global Multi-Agent Toolset Installer",
     "",
     "Usage:",
     ...COMMANDS.map((command) => `  maui ${command}`),

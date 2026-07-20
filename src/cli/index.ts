@@ -57,7 +57,7 @@ function parseInstallArgs(args: string[]): {
 async function runInstall(args: string[]): Promise<CliResult> {
   const { source, scope, agents: agentFilter, pluginFlags, allPlugins } = parseInstallArgs(args);
   if (!source && scope !== "project") {
-    return { code: 1, stderr: "maui install: missing <source> argument" };
+    return { code: 1, stderr: "🪝maui install: missing <source> argument" };
   }
 
   try {
@@ -77,7 +77,7 @@ async function runInstall(args: string[]): Promise<CliResult> {
     const anyFailed = results.some((result) => result.failed.length > 0);
     return { code: anyFailed ? 1 : 0, stdout: blocks.join("\n\n") };
   } catch (error) {
-    return { code: 1, stderr: `maui install: ${(error as Error).message}` };
+    return { code: 1, stderr: `🪝maui install: ${(error as Error).message}` };
   }
 }
 
@@ -104,7 +104,7 @@ function parseRemoveArgs(args: string[]): { name?: string; agents?: string[]; pu
 async function runRemove(args: string[]): Promise<CliResult> {
   const { name, agents, purge } = parseRemoveArgs(args);
   if (!name) {
-    return { code: 1, stderr: "maui remove: missing <plugin-name> argument" };
+    return { code: 1, stderr: "🪝maui remove: missing <plugin-name> argument" };
   }
 
   try {
@@ -119,7 +119,7 @@ async function runRemove(args: string[]): Promise<CliResult> {
     }
     return { code: 0, stdout: lines.join("\n") };
   } catch (error) {
-    return { code: 1, stderr: `maui remove: ${(error as Error).message}` };
+    return { code: 1, stderr: `🪝maui remove: ${(error as Error).message}` };
   }
 }
 
@@ -142,70 +142,70 @@ function parseNameAndAgentArgs(args: string[]): { name?: string; agent?: string 
 async function runLink(args: string[]): Promise<CliResult> {
   const { name, agent } = parseNameAndAgentArgs(args);
   if (!name || !agent) {
-    return { code: 1, stderr: "maui link: usage: maui link <plugin-name> --agent <agent-name>" };
+    return { code: 1, stderr: "🪝maui link: usage: maui link <plugin-name> --agent <agent-name>" };
   }
 
   try {
     await linkPlugin(name, agent);
     return { code: 0, stdout: `Linked ${name} → ${agent}` };
   } catch (error) {
-    return { code: 1, stderr: `maui link: ${(error as Error).message}` };
+    return { code: 1, stderr: `🪝maui link: ${(error as Error).message}` };
   }
 }
 
 async function runUnlink(args: string[]): Promise<CliResult> {
   const { name, agent } = parseNameAndAgentArgs(args);
   if (!name || !agent) {
-    return { code: 1, stderr: "maui unlink: usage: maui unlink <plugin-name> --agent <agent-name>" };
+    return { code: 1, stderr: "🪝maui unlink: usage: maui unlink <plugin-name> --agent <agent-name>" };
   }
 
   try {
     await unlinkPlugin(name, agent);
     return { code: 0, stdout: `Unlinked ${name} from ${agent}` };
   } catch (error) {
-    return { code: 1, stderr: `maui unlink: ${(error as Error).message}` };
+    return { code: 1, stderr: `🪝maui unlink: ${(error as Error).message}` };
   }
 }
 
 async function runCreate(args: string[]): Promise<CliResult> {
   const name = args.find((arg) => !arg.startsWith("--"));
   if (!name) {
-    return { code: 1, stderr: "maui create: missing <name> argument" };
+    return { code: 1, stderr: "🪝maui create: missing <name> argument" };
   }
 
   try {
     const targetDir = await create(name);
     return { code: 0, stdout: `Created ${targetDir}` };
   } catch (error) {
-    return { code: 1, stderr: `maui create: ${(error as Error).message}` };
+    return { code: 1, stderr: `🪝maui create: ${(error as Error).message}` };
   }
 }
 
 async function runCreatePlugin(args: string[]): Promise<CliResult> {
   const pluginName = args.find((arg) => !arg.startsWith("--"));
   if (!pluginName) {
-    return { code: 1, stderr: "maui create-plugin: missing <plugin-name> argument" };
+    return { code: 1, stderr: "🪝maui create-plugin: missing <plugin-name> argument" };
   }
 
   try {
     const targetDir = await createPlugin(pluginName);
     return { code: 0, stdout: `Created ${targetDir}` };
   } catch (error) {
-    return { code: 1, stderr: `maui create-plugin: ${(error as Error).message}` };
+    return { code: 1, stderr: `🪝maui create-plugin: ${(error as Error).message}` };
   }
 }
 
 async function runCreateMarketplace(args: string[]): Promise<CliResult> {
   const marketplaceName = args.find((arg) => !arg.startsWith("--"));
   if (!marketplaceName) {
-    return { code: 1, stderr: "maui create-marketplace: missing <marketplace-name> argument" };
+    return { code: 1, stderr: "🪝maui create-marketplace: missing <marketplace-name> argument" };
   }
 
   try {
     const targetDir = await createMarketplace(marketplaceName);
     return { code: 0, stdout: `Created ${targetDir}` };
   } catch (error) {
-    return { code: 1, stderr: `maui create-marketplace: ${(error as Error).message}` };
+    return { code: 1, stderr: `🪝maui create-marketplace: ${(error as Error).message}` };
   }
 }
 
@@ -228,7 +228,7 @@ async function runUpdate(args: string[]): Promise<CliResult> {
     }
     return { code: 0, stdout: lines.join("\n") };
   } catch (error) {
-    return { code: 1, stderr: `maui update: ${(error as Error).message}` };
+    return { code: 1, stderr: `🪝maui update: ${(error as Error).message}` };
   }
 }
 
@@ -240,7 +240,7 @@ export async function run(argv: string[]): Promise<CliResult> {
   }
 
   if (!knownSubcommand(command)) {
-    return { code: 1, stderr: `maui: unknown command "${command}"\n\n${helpText()}` };
+    return { code: 1, stderr: `🪝maui: unknown command "${command}"\n\n${helpText()}` };
   }
 
   if (command === "install") {
@@ -279,7 +279,7 @@ export async function run(argv: string[]): Promise<CliResult> {
     return runUpdate(rest);
   }
 
-  return { code: 1, stderr: `maui: "${command}" is not implemented yet` };
+  return { code: 1, stderr: `🪝maui: "${command}" is not implemented yet` };
 }
 
 if (import.meta.main) {
