@@ -144,6 +144,44 @@ manifest).
       still produces the original, unchanged single-plugin scaffold
 - [x] `bun test` and `bun build` clean (117 tests passing)
 
+### Phase 11: Resolve SPEC.md's Open Questions
+
+SPEC.md's "Open Questions" section accumulated several items flagged during
+earlier phases as "confirm during Plan/Implement phase" but never actually
+closed out, even though the adapters they concern are already shipped and
+in use. Some are pure research gaps (exact CLI argument shapes, uninstall
+syntax, contextFile paths); a few are product decisions deliberately
+deferred and never revisited (registry/index, version pinning, `bun build
+--compile`); one (#7, CLI arg-parsing library) is stale — already resolved
+implicitly by the existing hand-rolled `Bun.argv` parser. Goal: close every
+open question with either a confirmed-by-docs implementation change or an
+explicit, documented decision — never leave a bare unresolved question.
+Same discipline as Tasks 13–18: research the tool's real docs first, then
+implement; if a fact can't be confirmed, say so explicitly and pick the
+safe default rather than guess.
+
+- [ ] Task 29: Confirm Claude Code's self-hosted single-plugin marketplace
+      pattern (Open Question #3) — done first since `scaffold.ts`'s
+      already-shipped output depends on it
+- [ ] Task 30: Confirm Gemini's uninstall syntax + project-scope contextFile
+      path (Open Question #2, part of #8)
+- [ ] Task 31: Confirm Grok CLI argument shapes (Open Question #2c)
+- [ ] Task 32: Decide GitHub Copilot / Antigravity adapter scope (remainder
+      of Open Question #1)
+- [ ] Task 33: Fill in remaining contextFile conventions for Codex, Grok,
+      Cursor, Windsurf, Kiro (remainder of Open Question #8)
+- [ ] Task 34: Resolve the remaining decision-only Open Questions (#4
+      registry/index, #5 versioning/pinning, #6 `bun build --compile`, #7
+      CLI arg-parsing library — mark resolved, not deferred)
+
+### Checkpoint: Phase 11
+- [ ] Every numbered Open Question (1–8, including sub-items 2a/2c) in
+      SPEC.md reads as resolved or explicitly deferred with a stated reason
+      — none left as a bare question
+- [ ] `bun test`, `bun run build`, `bun run lint` all clean
+- [ ] `grep -n "unconfirmed\|not found\|TBD" SPEC.md` returns nothing tied
+      to Open Questions #1–#8
+
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
@@ -155,7 +193,6 @@ manifest).
 
 ## Open Questions
 
-Carried over from SPEC.md's own Open Questions list (folder conventions for
-Cursor/Windsurf/Kiro, exact native-CLI argument shapes, contextFile
-conventions for unconfirmed adapters, etc.) — each surfaces again as a task-
-level acceptance criterion in `tasks/todo.md` rather than being repeated here.
+Tracked and being actively closed out in **Phase 11** above (Tasks 29–34),
+one task per open question or cluster of related questions — see
+`tasks/todo.md` for the full acceptance criteria of each.

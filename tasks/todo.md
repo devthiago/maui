@@ -863,3 +863,195 @@ what manual end-to-end verification is for.
 - `tests/integration/prompt.test.ts` (new)
 
 **Estimated scope:** Small
+
+---
+
+## Task 29: Confirm Claude Code's self-hosted single-plugin marketplace pattern
+
+**Description:** Independently verify, against Claude Code's own docs
+(code.claude.com/docs), that a repo can catalog itself for
+`claude plugin marketplace add <owner>/<repo>` by shipping both
+`.claude-plugin/plugin.json` and a self-referencing
+`.claude-plugin/marketplace.json` (`plugins: [{ name, source: "." }]`) —
+the exact pattern `scaffoldStandalonePlugin` (`src/core/scaffold.ts`) has
+generated since Phase 5, never independently confirmed until now. This runs
+first in this phase because everything else here is independent, but a
+wrong answer here means fixing already-shipped scaffold output.
+
+**Acceptance criteria:**
+- [ ] If confirmed: SPEC.md's Open Question #3 rewritten as resolved, with the doc citation
+- [ ] If not confirmed / found incorrect: `scaffoldStandalonePlugin` (and `claude-code.ts`'s install command, if that's what's wrong) corrected to the actually-valid pattern
+- [ ] No regression in the existing single-plugin / marketplace-mode scaffold tests
+
+**Verification:**
+- [ ] `bun test tests/integration/scaffold.test.ts` passes
+- [ ] `bun run build && bun run lint` clean
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `SPEC.md`
+- `src/core/scaffold.ts`, `src/adapters/claude-code.ts` (only if the pattern is wrong)
+- `tests/integration/scaffold.test.ts` (only if the pattern is wrong)
+
+**Estimated scope:** Small (research + doc update), Medium if the pattern turns out to be wrong
+
+---
+
+## Task 30: Confirm Gemini's uninstall syntax and project-scope contextFile path
+
+**Description:** `geminiAdapter.remove()` (`src/adapters/gemini.ts`)
+currently throws `UnsupportedRemovalError` because no non-interactive
+`gemini extensions uninstall` equivalent was found during the original spec
+research. Re-check Gemini CLI's own docs for a confirmed non-interactive
+uninstall command; implement it if one exists. Also confirm (or refute) the
+project-scope `<project>/GEMINI.md` contextFile path in
+`src/core/context-file.ts`, currently assumed by symmetry with the
+confirmed global `~/.gemini/GEMINI.md` path but never independently checked.
+
+**Acceptance criteria:**
+- [ ] If a non-interactive uninstall command is confirmed: `geminiAdapter.remove()` implements it (mirrors `claudeCodeAdapter.remove()`'s shape), with a failing-then-passing integration test proving it
+- [ ] If genuinely still undocumented: `UnsupportedRemovalError` stays, but SPEC.md's Open Question #2 wording changes from "not found in pages fetched" to a definitive, dated "confirmed absent"
+- [ ] Gemini's project-scope `contextFile` entry in `context-file.ts` is corrected if research contradicts the current assumption, otherwise the SPEC.md table's "assumed by symmetry, verify" note is updated to "confirmed"
+
+**Verification:**
+- [ ] `bun test` (full suite) passes
+- [ ] If `remove()` changes: new test fails before the fix, passes after (TDD)
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `SPEC.md`
+- `src/adapters/gemini.ts`
+- `src/core/context-file.ts`
+- Gemini's integration test file (check `tests/integration/` for the existing one before assuming a new file is needed)
+
+**Estimated scope:** Small
+
+---
+
+## Task 31: Confirm Grok CLI argument shapes
+
+**Description:** `src/adapters/grok.ts`'s install/remove argument
+construction (`<name>@<marketplace>` qualifiers, bare `owner/repo` for
+`marketplace add`) was built by analogy to Claude Code's confirmed shape,
+explicitly flagged in the file's own comment as unconfirmed. Re-check
+docs.x.ai/build/cli/reference for the actual argument formats: owner/repo
+shorthand vs. full URL for `marketplace add`; whether `install`/`uninstall`
+need the `<name>@<marketplace>` qualifier or just `<name>`; scope flags.
+Also resolve the minor open sub-question of whether Grok's skill loader
+reads `.agents/skills/` the way OpenCode's does.
+
+**Acceptance criteria:**
+- [ ] If research contradicts the current by-analogy shape: `grok.ts` and its test are corrected (TDD — failing test first)
+- [ ] If research confirms the current shape: the code comment is updated from "by analogy" to "confirmed," citing the source
+- [ ] SPEC.md's Open Question #2c rewritten as resolved either way, including a definitive answer (not "don't rely on this until verified") for the `.agents/skills/` sub-question
+
+**Verification:**
+- [ ] `bun test` on Grok's integration test file passes
+- [ ] `bun run build && bun run lint` clean
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `SPEC.md`
+- `src/adapters/grok.ts`
+- Grok's integration test file
+
+**Estimated scope:** Small, unless the argument shape is wrong (then Medium — it's a live behavior change)
+
+---
+
+## Task 32: Decide GitHub Copilot / Antigravity adapter scope
+
+**Description:** Neither GitHub Copilot nor Antigravity has a dedicated
+maui adapter today — both fall through to the generic `_default` `.agents`
+fallback. Research whether either tool actually has a scriptable,
+non-interactive plugin/extension-install CLI worth building an adapter
+around. Recommended default absent such a finding: explicitly decide "no
+dedicated adapter for v1," since the `.agents` fallback already covers any
+undetected/unlisted agent fully — this task's job is to make that decision
+explicit in SPEC.md, not to speculatively build an adapter for a tool with
+no confirmed automation surface.
+
+**Acceptance criteria:**
+- [ ] SPEC.md's Open Question #1 (the GitHub Copilot/Antigravity portion) rewritten as an explicit decision with rationale, not left open
+- [ ] If a scriptable CLI *is* found for either tool: do NOT implement the adapter in this task — stop and report back so a new, separate follow-up task can be scoped for it (same shape as Tasks 13–18)
+
+**Verification:**
+- [ ] SPEC.md reads internally consistent — no code changes expected
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `SPEC.md` only (expected)
+
+**Estimated scope:** Small
+
+---
+
+## Task 33: Fill in remaining contextFile conventions
+
+**Description:** `CONTEXT_FILES` in `src/core/context-file.ts` only has
+confirmed entries for `claude-code`, `gemini`, and `opencode` — Codex,
+Grok, Cursor, and Windsurf/Kiro all currently fall back to the generic
+`AGENTS.md` convention. Research each remaining agent's own "memory"/
+instructions-file convention (does Codex have one beyond `AGENTS.md`? does
+Grok? does Cursor have a single memory file, or only the already-handled
+`.cursor/rules/` directory? is Windsurf/Cascade's `global_rules.md` — noted
+in `windsurf.ts` as not directory-shaped — still worth a `contextFile`
+entry for postinstall purposes even though it's not a symlink target?).
+
+**Acceptance criteria:**
+- [ ] Each **confirmed** convention gets an entry in `CONTEXT_FILES` (same shape as existing entries), a matching row in SPEC.md's contextFile table, and a unit test in `tests/unit/context-file.test.ts`
+- [ ] Anything that stays unconfirmed after real research stays on the `AGENTS.md` fallback — no guessed filenames — but SPEC.md's wording changes to reflect that it was actually checked this time, not just "unconfirmed"
+
+**Verification:**
+- [ ] `bun test tests/unit/context-file.test.ts` passes with new cases
+- [ ] Full `bun test` suite still green
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `SPEC.md`
+- `src/core/context-file.ts`
+- `tests/unit/context-file.test.ts`
+
+**Estimated scope:** Small
+
+---
+
+## Task 34: Resolve the remaining decision-only Open Questions (#4, #5, #6, #7)
+
+**Description:** Four open questions need no research, only a documented
+product decision — they've sat open since the original spec despite being
+pure scope calls. Resolve each explicitly in SPEC.md:
+- **#4** (built-in registry/index of known-good plugins): defer past v1 —
+  "any git URL with a `maui.json`" stays sufficient; a curated index adds
+  ongoing maintenance/trust-review overhead not needed yet.
+- **#5** (versioning/pinning — pinned git ref vs. always-latest,
+  `update --check`/dry-run): defer past v1 as its own future feature/plan
+  cycle, not bundled into this cleanup — it's a real feature, not a
+  documentation gap.
+- **#6** (`bun build --compile` standalone binary): defer — the
+  `bunx`/`bun add -g github:<owner>/maui` distribution path already covers
+  installation without adding a second distribution channel.
+- **#7** (CLI argument-parsing library): mark **resolved**, not deferred —
+  the hand-rolled `Bun.argv` parsing already live throughout
+  `src/cli/index.ts` (`parseInstallArgs`, `parseRemoveArgs`, etc.) *is* the
+  decision; the wording just needs to say so instead of "TBD."
+
+**Acceptance criteria:**
+- [ ] SPEC.md's Open Questions #4, #5, #6, #7 each read as an explicit resolution/decision with stated rationale — none left as a bare question
+- [ ] No dangling "TBD" or open-question framing remains for #1–#8 as a whole (checkpoint for the whole phase, not just this task)
+
+**Verification:**
+- [ ] Manual read-through of SPEC.md's Open Questions section
+- [ ] `grep -n "unconfirmed\|not found\|TBD" SPEC.md` shows nothing tied to #1–#8
+
+**Dependencies:** Tasks 29–33 (runs last so it can close the whole section out cleanly)
+
+**Files likely touched:**
+- `SPEC.md` only
+
+**Estimated scope:** Small
