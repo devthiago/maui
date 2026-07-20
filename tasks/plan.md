@@ -285,9 +285,9 @@ close, not just extend around:
 - [x] Task 38: `fetchSource()` — shared-cache-key rewrite of `fetchPlugin`, consuming Task 37
 
 ### Checkpoint: Phase 12 (core primitives)
-- [ ] `bun test` passes with zero changes to any existing adapter/install/update/remove test
-- [ ] `detectSourceMode` correctly classifies: maui.json-only; maui.json+marketplace.json (self-hosted); marketplace.json-only with `./plugins/<name>` entries; neither
-- [ ] `fetchSource` on a single-plugin fixture produces a byte-identical cache dir to today's `fetchPlugin`
+- [x] `bun test` passes with zero changes to any existing adapter/install/update/remove test
+- [x] `detectSourceMode` correctly classifies: maui.json-only; maui.json+marketplace.json (self-hosted); marketplace.json-only with `./plugins/<name>` entries; neither
+- [x] `fetchSource` on a single-plugin fixture produces a byte-identical cache dir to today's `fetchPlugin`
 
 - [ ] Task 39: Plugin selection — interactive prompt + `--plugin`/`--all-plugins` + hard error on no-TTY-no-flags
 - [ ] Task 40: `installOnePlugin` extraction + `installMarketplace`/`installFromSource` + CLI wiring, proven against symlink targets only (`_default` + one real symlink adapter)
