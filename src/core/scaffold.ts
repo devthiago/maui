@@ -22,6 +22,50 @@ export interface MarketplaceScaffoldOptions {
 
 const COMMON_FOLDERS = ["skills", "agents", "commands", "rules", "prompts", "hooks"];
 
+const OPENCODE_PLUGIN_VERSION = "^1.18.3";
+
+function toPascalCase(name: string): string {
+  return name
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
+/**
+ * OpenCode plugins are conceptually closer to Claude Code / Codex hooks
+ * than to skills or commands — they intercept and react to events (tool
+ * calls, sessions, permissions, etc.) instead of adding new capabilities.
+ * This is the file maui's opencode adapter symlinks (renamed to
+ * <plugin-name>.ts) into OpenCode's plugins/ folder on install. Mirrors
+ * the TypeScript Support example at
+ * opencode.ai/docs/plugins/#typescript-support.
+ */
+function openCodeHooksFileContent(pluginName: string): string {
+  const exportName = toPascalCase(pluginName);
+  return `/**
+ * OpenCode plugin hooks for "${pluginName}".
+ *
+ * OpenCode plugins are conceptually closer to Claude Code / Codex hooks
+ * than to skills or commands — they let you intercept and react to
+ * events (tool calls, sessions, permissions, etc.) instead of adding new
+ * capabilities. See: https://opencode.ai/docs/plugins/#create-a-plugin
+ */
+import type { Plugin } from "@opencode-ai/plugin";
+
+export const ${exportName}: Plugin = async ({ project, client, $, directory, worktree }) => {
+  return {
+    // Type-safe hook implementations go here, e.g.:
+    // "tool.execute.before": async (input, output) => {
+    //   if (input.tool === "read" && output.args.filePath.includes(".env")) {
+    //     throw new Error("Do not read .env files");
+    //   }
+    // },
+  };
+};
+`;
+}
+
 const BUMP_VERSION_SCRIPT = `import { join } from "node:path";
 
 const newVersion = process.argv[2];
@@ -207,7 +251,14 @@ async function scaffoldStandalonePlugin(options: ScaffoldOptions): Promise<strin
 
   for (const folder of COMMON_FOLDERS) {
     await mkdir(join(targetDir, folder), { recursive: true });
-    await Bun.write(join(targetDir, folder, ".gitkeep"), "");
+    if (folder === "hooks") {
+      await Bun.write(
+        join(targetDir, folder, "opencode-hooks.ts"),
+        openCodeHooksFileContent(options.pluginName)
+      );
+    } else {
+      await Bun.write(join(targetDir, folder, ".gitkeep"), "");
+    }
   }
 
   await mkdir(join(targetDir, ".claude-plugin"), { recursive: true });
@@ -248,6 +299,7 @@ async function scaffoldStandalonePlugin(options: ScaffoldOptions): Promise<strin
       cursor: { "rules/": ".cursor/rules/" },
       windsurf: { "rules/": ".windsurf/rules/" },
       kiro: { "rules/": ".kiro/steering/" },
+      opencode: { "skills/": "skills/", "commands/": "commands/" },
       _default: { "skills/": "skills/", "commands/": "commands/" },
     },
   });
@@ -260,6 +312,9 @@ async function scaffoldStandalonePlugin(options: ScaffoldOptions): Promise<strin
     ...(options.license ? { license: options.license } : {}),
     scripts: {
       "version:bump": "bun run scripts/bump-version.ts",
+    },
+    dependencies: {
+      "@opencode-ai/plugin": OPENCODE_PLUGIN_VERSION,
     },
   });
 
@@ -286,7 +341,14 @@ async function scaffoldPluginInMarketplace(options: ScaffoldOptions, cwd: string
 
   for (const folder of COMMON_FOLDERS) {
     await mkdir(join(targetDir, folder), { recursive: true });
-    await Bun.write(join(targetDir, folder, ".gitkeep"), "");
+    if (folder === "hooks") {
+      await Bun.write(
+        join(targetDir, folder, "opencode-hooks.ts"),
+        openCodeHooksFileContent(options.pluginName)
+      );
+    } else {
+      await Bun.write(join(targetDir, folder, ".gitkeep"), "");
+    }
   }
 
   await mkdir(join(targetDir, ".claude-plugin"), { recursive: true });
@@ -312,6 +374,9 @@ async function scaffoldPluginInMarketplace(options: ScaffoldOptions, cwd: string
     ...(options.license ? { license: options.license } : {}),
     scripts: {
       "version:bump": "bun run scripts/bump-version.ts",
+    },
+    dependencies: {
+      "@opencode-ai/plugin": OPENCODE_PLUGIN_VERSION,
     },
   });
 

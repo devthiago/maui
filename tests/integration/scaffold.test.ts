@@ -25,7 +25,7 @@ describe("scaffoldPlugin", () => {
         targetDir,
       });
 
-      for (const folder of ["skills", "agents", "commands", "rules", "prompts", "hooks"]) {
+      for (const folder of ["skills", "agents", "commands", "rules", "prompts"]) {
         expect(await Bun.file(join(targetDir, folder, ".gitkeep")).exists()).toBe(true);
       }
 
@@ -53,6 +53,33 @@ describe("scaffoldPlugin", () => {
         marketplaceName: "my-plugin",
       });
       expect(maui.targets._default).toEqual({ "skills/": "skills/", "commands/": "commands/" });
+      expect(maui.targets.opencode).toEqual({ "skills/": "skills/", "commands/": "commands/" });
+    });
+  });
+
+  it("scaffolds hooks/opencode-hooks.ts with a working TypeScript-Support example and a docs docblock", async () => {
+    await withTmpDir(async (root) => {
+      const targetDir = join(root, "my-plugin");
+      await scaffoldPlugin({ pluginName: "my-plugin", githubUser: "example-user", targetDir });
+
+      const hooksFile = Bun.file(join(targetDir, "hooks", "opencode-hooks.ts"));
+      expect(await hooksFile.exists()).toBe(true);
+      expect(await Bun.file(join(targetDir, "hooks", ".gitkeep")).exists()).toBe(false);
+
+      const content = await hooksFile.text();
+      expect(content).toContain("https://opencode.ai/docs/plugins/#create-a-plugin");
+      expect(content).toContain('import type { Plugin } from "@opencode-ai/plugin"');
+      expect(content).toContain("export const MyPlugin: Plugin = async (");
+    });
+  });
+
+  it("adds @opencode-ai/plugin as a package.json dependency", async () => {
+    await withTmpDir(async (root) => {
+      const targetDir = join(root, "my-plugin");
+      await scaffoldPlugin({ pluginName: "my-plugin", githubUser: "example-user", targetDir });
+
+      const pkg = await Bun.file(join(targetDir, "package.json")).json();
+      expect(pkg.dependencies["@opencode-ai/plugin"]).toBeDefined();
     });
   });
 

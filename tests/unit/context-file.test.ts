@@ -26,6 +26,18 @@ describe("resolveContextFile", () => {
     ).toBe("/repo/GEMINI.md");
   });
 
+  it("resolves opencode global scope to ~/.config/opencode/AGENTS.md", () => {
+    expect(resolveContextFile("opencode", "global", { home: "/home/user" })).toBe(
+      "/home/user/.config/opencode/AGENTS.md"
+    );
+  });
+
+  it("resolves opencode project scope to <project>/AGENTS.md", () => {
+    expect(
+      resolveContextFile("opencode", "project", { home: "/home/user", projectRoot: "/repo" })
+    ).toBe("/repo/AGENTS.md");
+  });
+
   it("falls back to AGENTS.md for an adapter with no confirmed convention", () => {
     expect(resolveContextFile("codex", "global", { home: "/home/user" })).toBe(
       "/home/user/AGENTS.md"

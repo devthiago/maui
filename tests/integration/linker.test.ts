@@ -1,8 +1,8 @@
 import { describe, it, expect } from "bun:test";
-import { mkdtemp, rm, mkdir, writeFile, lstat, readdir, readFile } from "node:fs/promises";
+import { mkdtemp, rm, mkdir, writeFile, lstat, readdir, readFile, readlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { linkChildren, unlinkChildren } from "../../src/core/linker";
+import { linkChildren, linkRenamedFile, unlinkChildren } from "../../src/core/linker";
 
 async function withTmpDir(prefix: string, fn: (dir: string) => Promise<void>): Promise<void> {
   const dir = await mkdtemp(join(tmpdir(), prefix));
@@ -93,6 +93,75 @@ describe("linkChildren", () => {
 
       const entries = await readdir(container);
       expect(entries).toEqual(["code-review"]);
+    });
+  });
+});
+
+describe("linkRenamedFile", () => {
+  it("symlinks a single source file to a differently-named destination path", async () => {
+    await withTmpDir("maui-linker-", async (root) => {
+      const sourceFile = join(root, "plugin-a", "hooks", "opencode-hooks.ts");
+      await mkdir(join(root, "plugin-a", "hooks"), { recursive: true });
+      await writeFile(sourceFile, "export const PluginA = async () => ({});\n");
+      const destFile = join(root, "opencode-home", "plugins", "plugin-a.ts");
+
+      const linked = await linkRenamedFile(sourceFile, destFile);
+
+      expect(linked).toBe(destFile);
+      const stat = await lstat(destFile);
+      expect(stat.isSymbolicLink()).toBe(true);
+      expect(await readlink(destFile)).toBe(sourceFile);
+    });
+  });
+
+  it("returns null and creates nothing when the source file doesn't exist", async () => {
+    await withTmpDir("maui-linker-", async (root) => {
+      const sourceFile = join(root, "plugin-a", "hooks", "opencode-hooks.ts");
+      const destFile = join(root, "opencode-home", "plugins", "plugin-a.ts");
+
+      const linked = await linkRenamedFile(sourceFile, destFile);
+
+      expect(linked).toBeNull();
+      expect(await Bun.file(destFile).exists()).toBe(false);
+    });
+  });
+
+  it("backs up a pre-existing non-symlink file instead of overwriting it", async () => {
+    await withTmpDir("maui-linker-", async (root) => {
+      const sourceFile = join(root, "plugin-a", "hooks", "opencode-hooks.ts");
+      await mkdir(join(root, "plugin-a", "hooks"), { recursive: true });
+      await writeFile(sourceFile, "export const PluginA = async () => ({});\n");
+      const destDir = join(root, "opencode-home", "plugins");
+      await mkdir(destDir, { recursive: true });
+      const destFile = join(destDir, "plugin-a.ts");
+      await writeFile(destFile, "pre-existing user content\n");
+
+      await linkRenamedFile(sourceFile, destFile);
+
+      const stat = await lstat(destFile);
+      expect(stat.isSymbolicLink()).toBe(true);
+
+      const entries = await readdir(destDir);
+      const backupName = entries.find((name) => name.startsWith("plugin-a.ts.maui-backup-"));
+      expect(backupName).toBeDefined();
+      const backupContent = await readFile(join(destDir, backupName!), "utf-8");
+      expect(backupContent).toBe("pre-existing user content\n");
+    });
+  });
+
+  it("re-linking the same source is a no-op, not a backup", async () => {
+    await withTmpDir("maui-linker-", async (root) => {
+      const sourceFile = join(root, "plugin-a", "hooks", "opencode-hooks.ts");
+      await mkdir(join(root, "plugin-a", "hooks"), { recursive: true });
+      await writeFile(sourceFile, "export const PluginA = async () => ({});\n");
+      const destFile = join(root, "opencode-home", "plugins", "plugin-a.ts");
+
+      await linkRenamedFile(sourceFile, destFile);
+      await linkRenamedFile(sourceFile, destFile);
+
+      const destDir = join(root, "opencode-home", "plugins");
+      const entries = await readdir(destDir);
+      expect(entries).toEqual(["plugin-a.ts"]);
     });
   });
 });

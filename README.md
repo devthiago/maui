@@ -25,6 +25,7 @@ machine. One manifest, one command.
 - [Quick Start](#quick-start)
 - [How maui Works](#how-maui-works)
 - [Supported Agents](#supported-agents)
+- [OpenCode Plugins vs. Claude/Codex Hooks](#opencode-plugins-vs-claudecodex-hooks)
 - [CLI Reference](#cli-reference)
 - [The Plugin Manifest (`maui.json`)](#the-plugin-manifest-mauijson)
 - [Postinstall & Postremove Hooks](#postinstall--postremove-hooks)
@@ -48,20 +49,30 @@ the ones it detects.
 
 ## Installation
 
+maui is **not published to the npm registry** — it's distributed straight
+from its GitHub repo using Bun's `github:` dependency specifier, which
+`bunx`/`bun add` resolve without touching npm at all.
+
+Run it without installing anything, via `bunx`:
+
 ```bash
-bun install -g maui
+bunx github:<owner>/maui install github.com/example-user/example-plugin
 ```
 
-Or invoke it without installing anything, via `bunx`:
+Each invocation fetches the current `main` branch and runs it — nothing is
+left behind. For a persistent `maui` command on your `$PATH` instead:
 
 ```bash
-bunx maui install github.com/example-user/example-plugin
+bun add -g github:<owner>/maui
 ```
 
-> **Note:** maui is published to the npm registry, but that's just where
-> the package lives — `npm install -g maui` will download the files, but
-> running the resulting `maui` command still requires Bun to be installed
-> separately (the CLI's shebang is `#!/usr/bin/env bun`). Install with Bun.
+To update later, just re-run the same `bun add -g` command — it re-fetches
+the latest commit.
+
+> **Note:** both forms require Bun (the CLI's shebang is
+> `#!/usr/bin/env bun`, and `bunx`/`bun add` execute it directly as
+> TypeScript — there's no compiled JS artifact and no separate `npm
+> install` step involved).
 
 ## Quick Start
 
@@ -88,27 +99,30 @@ maui create-plugin my-new-plugin
 Every agent maui supports falls into exactly one of two categories, and
 maui treats them completely differently:
 
-**Native-marketplace agents** (Claude Code, Codex CLI, Gemini CLI, OpenCode,
-Grok CLI) each ship their own plugin/extension manager. For these, maui
-never touches a single file on disk — it shells out to that agent's own CLI
+**Native-marketplace agents** (Claude Code, Codex CLI, Gemini CLI, Grok CLI)
+each ship their own plugin/extension manager. For these, maui never touches
+a single file on disk — it shells out to that agent's own CLI
 (`claude plugin install`, `gemini extensions install`, and so on) and lets
 the agent manage its own cache, versioning, and enable/disable state
 exactly as if you'd typed the command yourself.
 
-**Symlink agents** (Cursor, Windsurf, Kiro, and the always-on `.agents/`
-fallback described below) have no such install mechanism — just a folder
-convention they read from. For these, maui fetches the plugin's source once
-into its own cache (`~/.maui/plugins/<name>`) and symlinks each individual
-skill/command/rule *file* into the agent's folder — never the parent folder
-itself, so two different plugins can safely contribute into the same
-`skills/` directory without clobbering each other.
+**Symlink agents** (Cursor, Windsurf, Kiro, OpenCode, and the always-on
+`.agents/` fallback described below) have no such install mechanism — just
+a folder convention they read from. For these, maui fetches the plugin's
+source once into its own cache (`~/.maui/plugins/<name>`) and symlinks each
+individual skill/command/rule *file* into the agent's folder — never the
+parent folder itself, so two different plugins can safely contribute into
+the same `skills/` directory without clobbering each other. OpenCode is a
+symlink agent too, even though it has a real CLI — see
+[OpenCode Plugins vs. Claude/Codex Hooks](#opencode-plugins-vs-claudecodex-hooks)
+below for why.
 
 **The `.agents/` fallback is always populated**, on every install,
 regardless of which agents were actually detected. It's a safety net: even
 on a machine where maui doesn't recognize a single installed agent, the
 plugin's files still land somewhere predictable (`~/.agents/skills/…`), and
-at least one real tool (OpenCode) already reads skills from exactly that
-path by convention.
+OpenCode's own skill/command/agent loaders already read from exactly that
+path by convention, on top of its own dedicated `.config/opencode/` target.
 
 **A failing agent never blocks the others.** If Claude Code is installed
 but the plugin hasn't been pushed to GitHub yet, `claude plugin install`
@@ -137,18 +151,93 @@ pre-existing file maui would otherwise overwrite gets backed up first
 | **Claude Code** | Native-marketplace | `claude plugin marketplace add` + `claude plugin install` |
 | **Gemini CLI** | Native-marketplace | `gemini extensions install <github-url>` |
 | **Codex CLI** | Native-marketplace | `npx codex-marketplace add … --plugin` (third-party tool — asks for one-time consent before first use) |
-| **OpenCode** | Native-marketplace | `opencode plugin <npm-package> --global` (requires the plugin be published to npm — see [FAQ](#faq)) |
 | **Grok CLI** | Native-marketplace | `grok plugin marketplace add` + `grok plugin install` |
 | **Kiro** | Symlink | `.kiro/steering/` — global and project scope both supported |
 | **Cursor** | Symlink | `.cursor/rules/` — **project scope only**, Cursor has no global folder to install into |
 | **Windsurf** | Symlink | `.windsurf/rules/` — **project scope only**, Windsurf's global rules file isn't a directory maui can symlink into |
+| **OpenCode** | Symlink | `~/.config/opencode/…` (global) / `.opencode/…` (project) — plus a renamed `hooks/opencode-hooks.ts` symlink, see below |
 | **Everything else** | Symlink (fallback) | `~/.agents/` or `<project>/.agents/` — always populated, regardless of what's detected |
 
 An agent only gets touched if maui actually finds it: native-marketplace
 agents are detected by checking whether their CLI binary resolves on
 `$PATH` (not just whether a config folder exists); symlink agents are
-detected by their known config folder existing. Anything undetected is
-skipped and reported, never silently attempted.
+detected by their known config folder existing. OpenCode is the one
+exception on the symlink side — at global scope it's also detected by
+checking whether `opencode` resolves on `$PATH`, since it's a CLI-first
+tool and a stray `~/.config/opencode` folder proves nothing. Anything
+undetected is skipped and reported, never silently attempted.
+
+## OpenCode Plugins vs. Claude/Codex Hooks
+
+OpenCode is the one agent here that doesn't fit either box cleanly, so it's
+worth explaining on its own.
+
+Every other native-marketplace agent (Claude Code, Codex, Gemini, Grok) has
+a plugin system that closely mirrors maui's own model: a plugin is a bundle
+of skills/commands/rules that the agent's CLI fetches, installs, and
+manages. OpenCode has no such concept. Read literally, [OpenCode's
+"plugins"](https://opencode.ai/docs/plugins/) are event handlers — small
+TypeScript modules that hook into things like tool calls, sessions, and
+permissions. That's not a "skill pack," it's much closer to what Claude
+Code calls **hooks** (`PreToolUse`, `PostToolUse`, `Stop`, …) or what Codex
+exposes through its own hook mechanism. Skills, commands, and rules reach
+OpenCode through a completely separate, plain-folder convention
+(`.opencode/skills/`, `.opencode/commands/`, `.opencode/agents/`) — which is
+exactly why maui treats OpenCode as a **symlink agent**, not a
+native-marketplace one: there's no install CLI to shell out to, just files
+in folders, same as Cursor or Windsurf.
+
+So a maui plugin targeting OpenCode has two independent pieces, both
+optional:
+
+1. **Files** (`skills/`, `commands/`, `agents/`, `rules/`) — declared in
+   `maui.json`'s `opencode` target exactly like any other symlink agent,
+   e.g. `"opencode": { "skills/": "skills/", "commands/": "commands/" }`.
+2. **Hooks** (`hooks/opencode-hooks.ts`) — a fixed-convention file `maui
+   create`/`create-plugin` scaffold for you. On install, maui symlinks it
+   into `~/.config/opencode/plugins/<plugin-name>.ts` (global) or
+   `<project>/.opencode/plugins/<plugin-name>.ts` (project) — renamed to
+   match your plugin's name, since that's the file OpenCode's plugin loader
+   actually looks for at startup.
+
+### Mapping a Claude Code hook to an OpenCode plugin event
+
+If you already have a `PreToolUse`/`PostToolUse` hook in a Claude Code (or
+Codex) plugin and want the same behavior in OpenCode, here's how the
+concepts line up. This is a conceptual mapping, not a literal one — exact
+payload shapes and firing semantics differ per agent, so treat this as a
+starting point, not a drop-in translation:
+
+| Claude Code hook | Fires | Closest OpenCode plugin event |
+|---|---|---|
+| `PreToolUse` | Before a tool call executes | `"tool.execute.before"` |
+| `PostToolUse` | After a tool call succeeds | `"tool.execute.after"` |
+| `SessionStart` | When a session begins or resumes | `"session.created"` |
+| `SessionEnd` | When a session terminates | `"session.deleted"` |
+| `Notification` | When Claude Code sends a notification | `"tui.toast.show"` |
+| `PermissionRequest` | When a permission dialog appears | `"permission.asked"` |
+| `Stop` | When Claude finishes responding | `"session.idle"` |
+
+**Example — blocking reads of `.env` files.** A Claude Code `PreToolUse`
+hook that rejects a `Read` tool call against a `.env` file becomes, in
+OpenCode, a `tool.execute.before` handler in `hooks/opencode-hooks.ts`:
+
+```typescript
+import type { Plugin } from "@opencode-ai/plugin";
+
+export const EnvProtection: Plugin = async ({ project, client, $, directory, worktree }) => {
+  return {
+    "tool.execute.before": async (input, output) => {
+      if (input.tool === "read" && output.args.filePath.includes(".env")) {
+        throw new Error("Do not read .env files");
+      }
+    },
+  };
+};
+```
+
+See [opencode.ai/docs/plugins/#create-a-plugin](https://opencode.ai/docs/plugins/#create-a-plugin)
+for the full list of available events and their payload shapes.
 
 ## CLI Reference
 
@@ -303,6 +392,7 @@ its root. It's the single source of truth for what gets installed where:
     "kiro": { "rules/": ".kiro/steering/" },
     "cursor": { "rules/": ".cursor/rules/" },
     "windsurf": { "rules/": ".windsurf/rules/" },
+    "opencode": { "skills/": "skills/", "commands/": "commands/" },
     "_default": { "skills/": "skills/", "commands/": "commands/" }
   },
   "postinstall": "postinstall.ts",
@@ -313,13 +403,16 @@ its root. It's the single source of truth for what gets installed where:
 Each key in `targets` is an agent ID. Two shapes:
 
 - **`{ "marketplace": true, … }`** — a native-marketplace agent. `repo`
-  defaults to whatever source you passed to `maui install`; override it,
-  or `plugin`/`marketplaceName`, if your published name differs. OpenCode
-  additionally needs a `package` field (the npm specifier it installs).
+  defaults to whatever source you passed to `maui install`; override it, or
+  `plugin`/`marketplaceName`, if your published name differs.
 - **A plain object of `"source/": "dest/"` pairs** — a symlink agent. Every
   *immediate child* of `source/` gets its own symlink under `dest/`
   (resolved against that agent's config root) — never the folder itself,
   which is what lets multiple plugins safely share one `skills/` directory.
+  `opencode` is this shape too (it has no install CLI — see
+  [OpenCode Plugins vs. Claude/Codex Hooks](#opencode-plugins-vs-claudecodex-hooks));
+  if the plugin also ships `hooks/opencode-hooks.ts`, that file is
+  symlinked and renamed automatically and doesn't need an entry here.
 
 `postinstall`/`postremove` are both optional — see the next section.
 
@@ -376,7 +469,7 @@ my-plugin/
 │   └── plugin.json                { name, description, version }
 ├── gemini-extension.json          { name, version, description }
 ├── maui.json                      targets pre-wired for every agent above, plus symlink agents
-├── package.json                   includes a version:bump script
+├── package.json                   includes a version:bump script + the @opencode-ai/plugin dependency
 ├── scripts/
 │   └── bump-version.ts            bumps package.json + all four manifests above, in one step
 ├── skills/.gitkeep
@@ -384,7 +477,9 @@ my-plugin/
 ├── commands/.gitkeep
 ├── rules/.gitkeep
 ├── prompts/.gitkeep
-└── hooks/.gitkeep
+└── hooks/
+    └── opencode-hooks.ts          working TypeScript-Support example, ready to fill in — see
+                                      [OpenCode Plugins vs. Claude/Codex Hooks](#opencode-plugins-vs-claudecodex-hooks)
 ```
 
 This is the only scaffold shape with a `maui.json` — it's designed to be
@@ -415,7 +510,7 @@ my-toolkit/
     │   ├── .codex-plugin/plugin.json
     │   ├── package.json + scripts/bump-version.ts   bumps THIS plugin's files + its own
     │   │                                              entry in both marketplace.json files
-    │   └── skills/ agents/ commands/ rules/ prompts/ hooks/
+    │   └── skills/ agents/ commands/ rules/ prompts/ hooks/opencode-hooks.ts
     └── plugin-two/
         └── (same shape)
 ```
@@ -485,6 +580,15 @@ npx codex-marketplace add example-user/my-toolkit --plugins
 gemini extensions install https://github.com/example-user/my-toolkit
 ```
 
+**OpenCode is the odd one out here.** Since it has no marketplace CLI at
+all — installable only via maui's symlink mechanism, which needs a
+`maui.json` this shape deliberately doesn't have — a scaffolded
+`hooks/opencode-hooks.ts` inside `plugins/<name>/` has no automatic install
+path in a multi-plugin marketplace repo. Users who want it need to copy the
+file into their own `~/.config/opencode/plugins/` by hand, or you can
+convert that one plugin to a standalone repo (`maui create-plugin` in an
+empty directory) so `maui install` can reach it directly.
+
 ## Files & Directories maui Manages
 
 | Path | Purpose |
@@ -502,6 +606,13 @@ explicitly declares, plus narrow marker-delimited edits to memory files via
 postinstall hooks.
 
 ## FAQ
+
+**Why isn't maui itself on npm?**
+It's a Bun-only CLI with a TypeScript shebang entrypoint, and there's no
+reason to publish a registry package just to have `bun add -g` fetch and
+unpack it — `bun add -g github:<owner>/maui` or `bunx github:<owner>/maui`
+installs and runs it straight from source, with no registry, build step, or
+published artifact in between.
 
 **Can I install from a private GitHub repo?**
 Yes — maui does zero credential handling of its own. Fetching is a plain
@@ -528,19 +639,23 @@ symlink agents (Kiro, Cursor, Windsurf, `.agents/`).
 
 **Is every native command guaranteed correct?**
 Almost all of them are confirmed against each agent's own documentation.
-Two exceptions are flagged deliberately rather than silently assumed:
-Gemini and OpenCode have no confirmed non-interactive uninstall command, so
-`maui remove` reports that as unsupported instead of guessing one; Grok's
-exact argument shape (owner/repo vs. full URL, `name@marketplace` syntax)
-was inferred by close analogy to Claude Code's confirmed shape, since Grok
-never documented it directly — a wrong guess there fails loudly with Grok's
-own real error message, not silently.
+Two exceptions are flagged deliberately rather than silently assumed: Gemini
+has no confirmed non-interactive uninstall command, so `maui remove`
+reports that as unsupported instead of guessing one; Grok's exact argument
+shape (owner/repo vs. full URL, `name@marketplace` syntax) was inferred by
+close analogy to Claude Code's confirmed shape, since Grok never documented
+it directly — a wrong guess there fails loudly with Grok's own real error
+message, not silently.
 
-**Does OpenCode really need my plugin published to npm?**
-Yes — unlike every other agent here, OpenCode installs plugins as npm
-packages (`opencode plugin <package>`), not from a git source. Your
-`maui.json`'s `opencode` target needs a `package` field pointing at an
-actually-published npm package for that adapter to do anything.
+**Why does OpenCode get a separate `hooks/opencode-hooks.ts` file instead of just reusing skills/commands?**
+Because they're different things. Skills, commands, and rules are *content*
+— maui symlinks them into `.opencode/` the same way it does for Cursor or
+Windsurf. OpenCode's plugin system is *behavior* — event handlers that react
+to tool calls, sessions, and permissions, conceptually the same role Claude
+Code's hooks or Codex's hooks play. `hooks/opencode-hooks.ts` is where that
+behavior lives; see
+[OpenCode Plugins vs. Claude/Codex Hooks](#opencode-plugins-vs-claudecodex-hooks)
+for the full explanation and a hook-to-event mapping table.
 
 **What if a plugin's postinstall script does something I don't want?**
 Decline the consent prompt the first time it would run — maui shows you

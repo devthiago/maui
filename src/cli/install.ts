@@ -204,6 +204,9 @@ export async function installPlugin(
           const result = await linkChildren(join(pluginDir, sourceRel), join(rootDir, destRel));
           symlinks.push(...result.linked);
         }
+        if (adapter.linkExtra) {
+          symlinks.push(...(await adapter.linkExtra(pluginDir, rootDir, manifest.name)));
+        }
         const contextFiles = await runPostinstallForAgent(
           manifest,
           pluginDir,

@@ -1,43 +1,46 @@
-import { resolveBinary, runNativeCommand } from "../core/marketplace-exec";
-import { UnsupportedRemovalError } from "../core/errors";
-import type { NativeMarketplaceAdapter } from "../types";
-
-export class MissingPackageFieldError extends Error {
-  constructor(pluginName: string) {
-    super(
-      `Plugin "${pluginName}" has no "package" field for the opencode target in maui.json — ` +
-        'OpenCode installs plugins as npm packages (e.g. "@scope/name"), so this is required.'
-    );
-    this.name = "MissingPackageFieldError";
-  }
-}
+import { join } from "node:path";
+import { resolveBinary } from "../core/marketplace-exec";
+import { linkRenamedFile } from "../core/linker";
 
 /**
- * `opencode plugin <module> [--global]` is confirmed at opencode.ai/docs/cli/
- * ("Install a plugin and update your config"). No uninstall verb is
- * documented for the OpenCode CLI, so remove() reports unsupported rather
- * than guessing. <module> is an npm package specifier, not a git source —
- * OpenCode plugins must actually be published to npm for this to work.
+ * OpenCode plugins are conceptually closer to Claude Code / Codex *hooks*
+ * than to their marketplace-installed plugins — see opencode.ai/docs/plugins/.
+ * There's no `opencode plugin install <git-source>` marketplace command;
+ * plugins are just files discovered from a folder. Confirmed conventions
+ * (opencode.ai/docs/plugins/, /docs/skills/, /docs/commands/, /docs/agents/):
+ *
+ *   - project scope:  .opencode/
+ *   - global scope:   ~/.config/opencode/
+ *
+ * A plugin's `skills/`, `commands/`, `agents/`, `rules/` etc. are symlinked
+ * per-child into their respective .opencode subfolder exactly like every
+ * other symlink adapter, via the manifest's own SymlinkTargetMap — nothing
+ * OpenCode-specific about that part.
+ *
+ * The one OpenCode-specific piece is `linkExtra`: if the plugin ships a
+ * `hooks/opencode-hooks.ts` file, it's symlinked into `.../plugins/` and
+ * *renamed* to `<plugin-name>.ts`, since that's the file OpenCode actually
+ * loads at startup (opencode.ai/docs/plugins/#create-a-plugin).
  */
-export const openCodeAdapter: NativeMarketplaceAdapter = {
+export const openCodeAdapter = {
   id: "opencode",
-  kind: "native-marketplace",
 
-  async detect() {
+  globalRoot(home: string): string {
+    return join(home, ".config", "opencode");
+  },
+
+  projectRoot(cwd: string): string {
+    return join(cwd, ".opencode");
+  },
+
+  async detect(): Promise<boolean> {
     return resolveBinary("opencode") !== null;
   },
 
-  async install(identity) {
-    if (!identity.package) {
-      throw new MissingPackageFieldError(identity.pluginName);
-    }
-    await runNativeCommand("opencode", ["plugin", identity.package, "--global"]);
-  },
-
-  async remove(identity) {
-    throw new UnsupportedRemovalError(
-      identity.pluginName,
-      'no "opencode plugin" uninstall command is documented — remove it manually by editing the "plugin" array in your opencode.json, or check "opencode plugin --help" for the current syntax.'
-    );
+  async linkExtra(pluginDir: string, rootDir: string, pluginName: string): Promise<string[]> {
+    const hooksFile = join(pluginDir, "hooks", "opencode-hooks.ts");
+    const destFile = join(rootDir, "plugins", `${pluginName}.ts`);
+    const linked = await linkRenamedFile(hooksFile, destFile);
+    return linked ? [linked] : [];
   },
 };

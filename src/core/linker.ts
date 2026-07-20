@@ -1,5 +1,5 @@
 import { lstat, mkdir, readdir, readlink, rename, rm, symlink } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 export interface LinkResult {
   container: string;
@@ -54,6 +54,36 @@ export async function linkChildren(sourceDir: string, containerDir: string): Pro
   }
 
   return { container: containerDir, linked };
+}
+
+/**
+ * Symlinks a single source file to a destination path that may have a
+ * different name (e.g. a plugin's hooks/opencode-hooks.ts renamed to
+ * <plugin-name>.ts in OpenCode's plugins/ folder). Returns null without
+ * creating anything if the source file doesn't exist — not every plugin
+ * has this file, and that's not an error. Same backup-on-conflict and
+ * idempotent-relink behavior as linkChildren, just for one file instead of
+ * a directory's children.
+ */
+export async function linkRenamedFile(sourceFile: string, destFile: string): Promise<string | null> {
+  if (!(await pathExists(sourceFile))) return null;
+
+  await mkdir(dirname(destFile), { recursive: true });
+
+  if (await pathExists(destFile)) {
+    const stat = await lstat(destFile);
+    if (stat.isSymbolicLink()) {
+      const currentTarget = await readlink(destFile);
+      if (currentTarget === sourceFile) {
+        return destFile;
+      }
+    }
+    const backupPath = `${destFile}.maui-backup-${Date.now()}`;
+    await rename(destFile, backupPath);
+  }
+
+  await symlink(sourceFile, destFile);
+  return destFile;
 }
 
 /**

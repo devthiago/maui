@@ -12,7 +12,7 @@ const VALID_MANIFEST = {
     "claude-code": { marketplace: true },
     codex: { marketplace: true },
     gemini: { marketplace: true },
-    opencode: { marketplace: true, package: "@example/example-plugin" },
+    opencode: { "skills/": "skills/", "commands/": "commands/" },
     grok: { marketplace: true },
     cursor: {
       "cursor-rules/": ".cursor/rules/",
@@ -36,10 +36,7 @@ describe("parseManifest", () => {
     expect(manifest.name).toBe("example-plugin");
     expect(manifest.version).toBe("1.0.0");
     expect(manifest.targets["claude-code"]).toEqual({ marketplace: true });
-    expect(manifest.targets.opencode).toEqual({
-      marketplace: true,
-      package: "@example/example-plugin",
-    });
+    expect(manifest.targets.opencode).toEqual({ "skills/": "skills/", "commands/": "commands/" });
     expect(manifest.targets.cursor).toEqual({ "cursor-rules/": ".cursor/rules/" });
     expect(manifest.postinstall).toBe("postinstall.ts");
     expect(manifest.postremove).toBe("postremove.ts");

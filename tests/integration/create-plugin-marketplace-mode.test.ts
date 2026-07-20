@@ -31,6 +31,9 @@ describe("scaffoldPlugin in marketplace mode", () => {
       expect(await Bun.file(join(pluginDir, ".claude-plugin", "plugin.json")).exists()).toBe(true);
       expect(await Bun.file(join(pluginDir, ".codex-plugin", "plugin.json")).exists()).toBe(true);
       expect(await Bun.file(join(pluginDir, "skills", ".gitkeep")).exists()).toBe(true);
+      expect(await Bun.file(join(pluginDir, "hooks", "opencode-hooks.ts")).exists()).toBe(true);
+      const pkg = await Bun.file(join(pluginDir, "package.json")).json();
+      expect(pkg.dependencies["@opencode-ai/plugin"]).toBeDefined();
 
       expect(await Bun.file(join(pluginDir, ".claude-plugin", "marketplace.json")).exists()).toBe(false);
       expect(await Bun.file(join(pluginDir, "gemini-extension.json")).exists()).toBe(false);
