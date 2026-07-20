@@ -280,7 +280,7 @@ close, not just extend around:
   end-to-end "scaffold a marketplace, then install it" proof, but ships
   independently at any point.
 
-- [ ] Task 36: Registry schema — `sourceRepo` + `pluginPath`, backward-compat fallback
+- [x] Task 36: Registry schema — `sourceRepo` + `pluginPath`, backward-compat fallback
 - [ ] Task 37: `detectSourceMode()` — single-plugin vs. marketplace detection (+ SPEC.md wording fix)
 - [ ] Task 38: `fetchSource()` — shared-cache-key rewrite of `fetchPlugin`, consuming Task 37
 

@@ -430,7 +430,7 @@ actually backward-compatible with every existing single-plugin fixture.
 
 ---
 
-## Task 36: Registry schema — `sourceRepo` + `pluginPath`, backward-compat fallback
+## Task 36: Registry schema — `sourceRepo` + `pluginPath`, backward-compat fallback ✅ done
 
 **Description:** Add `sourceRepo?: string` and `pluginPath?: string` to
 `RegistryPluginEntry` in `src/types.ts`. `sourceRepo` is the absolute path
@@ -446,17 +446,17 @@ to `join(pluginsRoot(home), entry.name)` when `entry.sourceRepo` is absent
 (pre-migration registries).
 
 **Acceptance criteria:**
-- [ ] `RegistryPluginEntry` gains both optional fields; existing registry JSON files (no such fields) still parse and round-trip without error
-- [ ] `resolvePluginCacheDir()` returns the correct absolute path for both a fixture entry with `sourceRepo` set and one without (simulating a pre-migration entry)
-- [ ] No existing registry round-trip test breaks
+- [x] `RegistryPluginEntry` gains both optional fields; existing registry JSON files (no such fields) still parse and round-trip without error
+- [x] `resolvePluginCacheDir()` returns the correct absolute path for both a fixture entry with `sourceRepo` set and one without (simulating a pre-migration entry)
+- [x] No existing registry round-trip test breaks
 
 **Verification:**
-- [ ] `bun test tests/unit/registry.test.ts`
-- [ ] New unit test: a hand-written pre-migration-shaped registry JSON (no `sourceRepo`/`pluginPath`) still round-trips through `readRegistry`/`writeRegistry`
+- [x] `bun test tests/unit/registry.test.ts`
+- [x] New unit test: a hand-written pre-migration-shaped registry JSON (no `sourceRepo`/`pluginPath`) still round-trips through `readRegistry`/`writeRegistry`
 
 **Dependencies:** None
 
-**Files likely touched:**
+**Files touched:**
 - `src/types.ts`
 - `src/core/registry.ts`
 - `tests/unit/registry.test.ts`

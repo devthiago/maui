@@ -46,6 +46,21 @@ export interface RegistryPluginEntry {
   version: string;
   installedAt: string;
   agents: InstalledAgentEntry[];
+  /**
+   * Absolute path of the shared cache directory this plugin's files live
+   * under (~/.maui/plugins/<cache-key>/). Populated for every entry going
+   * forward — single-plugin installs included, where it equals
+   * `join(pluginsRoot(home), name)`. Absent on registries written before
+   * this field existed; use `resolvePluginCacheDir` rather than reading it
+   * directly so pre-migration entries still resolve correctly.
+   */
+  sourceRepo?: string;
+  /**
+   * Relative subpath within `sourceRepo` where this plugin's own
+   * `maui.json`/source root actually lives (e.g. "plugins/plugin-one").
+   * Only set for plugins installed from a multi-plugin marketplace source.
+   */
+  pluginPath?: string;
 }
 
 export interface Registry {
