@@ -796,16 +796,25 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
    equivalent form used when multiple plugins share the marketplace root
    (e.g. a shared `skills/` folder). No change needed to `scaffold.ts` —
    its `source: "."` output was already correct.
-4. Should v1 ship with a small built-in registry/index of known-good
-   symlink-adapter plugins, or is "any git URL with a `maui.json`"
-   sufficient to start? (Spec assumes the latter.)
-5. Versioning/pinning: should `maui.json` support a pinned git ref (tag/commit)
-   distinct from "always track latest" for symlink-adapter plugins, and does
-   `update` need a `--check`/dry-run mode before mutating the cache?
-6. `bun build --compile` standalone-binary distribution — worth offering
-   alongside the `bunx`/`bun add -g` GitHub-based install in v1, or defer?
-7. CLI argument-parsing library choice — deferred to the Plan phase, not a
-   spec-level decision.
+4. *Decided*: no built-in registry/index of known-good plugins for v1.
+   "Any git URL with a `maui.json`" stays sufficient — a curated index adds
+   ongoing maintenance/trust-review overhead maui doesn't need yet. Revisit
+   if users actually ask for discovery.
+5. *Decided*: versioning/pinning (a pinned git ref distinct from
+   "always track latest," plus an `update --check`/dry-run mode) is
+   deferred past v1. It's a real feature, not a documentation gap, and
+   deserves its own spec/plan cycle rather than being bundled into this
+   open-questions cleanup — a good candidate for the next feature phase.
+6. *Decided*: `bun build --compile` standalone-binary distribution is
+   deferred. `bunx`/`bun add -g github:<owner>/maui` (see Distribution
+   above) already covers installation with no dependency beyond having
+   Bun itself, which is already a hard requirement either way. Revisit
+   only if users specifically ask for a no-Bun-required binary.
+7. *Resolved*: CLI argument-parsing library choice. No framework was
+   adopted — `package.json` has no such dependency — and the hand-rolled
+   `Bun.argv`-based parsing already implemented throughout
+   `src/cli/index.ts` (`parseInstallArgs`, `parseRemoveArgs`,
+   `parseNameAndAgentArgs`, etc.) **is** the decision, not a placeholder.
 8. `contextFile` conventions for Codex, Grok, Cursor, Windsurf, and Kiro are
    unconfirmed — research each during the Plan phase alongside Open
    Question #1's folder-convention research. (OpenCode's is now confirmed —

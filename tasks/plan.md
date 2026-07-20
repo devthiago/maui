@@ -171,9 +171,11 @@ safe default rather than guess.
       of Open Question #1)
 - [ ] Task 33: Fill in remaining contextFile conventions for Codex, Grok,
       Cursor, Windsurf, Kiro (remainder of Open Question #8)
-- [ ] Task 34: Resolve the remaining decision-only Open Questions (#4
+- [x] Task 34: Resolve the remaining decision-only Open Questions (#4
       registry/index, #5 versioning/pinning, #6 `bun build --compile`, #7
-      CLI arg-parsing library — mark resolved, not deferred)
+      CLI arg-parsing library — mark resolved, not deferred). Done out of
+      order, ahead of Tasks 30–33, due to a WebFetch/WebSearch outage —
+      this task needed no external research.
 
 ### Checkpoint: Phase 11
 - [ ] Every numbered Open Question (1–8, including sub-items 2a/2c) in

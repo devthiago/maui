@@ -1031,7 +1031,7 @@ entry for postinstall purposes even though it's not a symlink target?).
 
 ---
 
-## Task 34: Resolve the remaining decision-only Open Questions (#4, #5, #6, #7)
+## Task 34: Resolve the remaining decision-only Open Questions (#4, #5, #6, #7) ✅ done
 
 **Description:** Four open questions need no research, only a documented
 product decision — they've sat open since the original spec despite being
@@ -1052,14 +1052,22 @@ pure scope calls. Resolve each explicitly in SPEC.md:
   decision; the wording just needs to say so instead of "TBD."
 
 **Acceptance criteria:**
-- [ ] SPEC.md's Open Questions #4, #5, #6, #7 each read as an explicit resolution/decision with stated rationale — none left as a bare question
-- [ ] No dangling "TBD" or open-question framing remains for #1–#8 as a whole (checkpoint for the whole phase, not just this task)
+- [x] SPEC.md's Open Questions #4, #5, #6, #7 each read as an explicit resolution/decision with stated rationale — none left as a bare question
+- [ ] No dangling "TBD" or open-question framing remains for #1–#8 as a whole — **not yet**, this is the whole-phase checkpoint and still awaits Tasks 30–33 (see note below)
 
 **Verification:**
-- [ ] Manual read-through of SPEC.md's Open Questions section
-- [ ] `grep -n "unconfirmed\|not found\|TBD" SPEC.md` shows nothing tied to #1–#8
+- [x] Manual read-through of SPEC.md's Open Questions section — #4–#7 confirmed resolved
+- [ ] `grep -n "unconfirmed\|not found\|TBD" SPEC.md` shows nothing tied to #1–#8 — still pending on #2/#2c/#8
 
-**Dependencies:** Tasks 29–33 (runs last so it can close the whole section out cleanly)
+**What actually happened:** ran out of order — a persistent WebFetch/
+WebSearch 529 (server overloaded) blocked Tasks 30–33's research partway
+through the autonomous run, so this pure-decision task (no research needed)
+was pulled forward to make progress while waiting. Its own scope (#4–#7)
+is fully done; the phase-wide checkpoint claim is not, until 30–33 resume
+and finish.
+
+**Dependencies:** None (reordered ahead of Tasks 30–33 due to an external
+tool outage — see note above)
 
 **Files likely touched:**
 - `SPEC.md` only
