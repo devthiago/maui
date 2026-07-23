@@ -24,6 +24,22 @@ const COMMON_FOLDERS = ["skills", "agents", "commands", "rules", "prompts", "hoo
 
 const OPENCODE_PLUGIN_VERSION = "^1.18.3";
 
+/**
+ * hooks/hooks.json is the shared default hooks path both Claude Code and
+ * Codex auto-discover at the plugin root (code.claude.com/docs/en/
+ * plugins-reference, developers.openai.com/codex/plugins/build) — neither
+ * plugin.json needs an explicit "hooks" field pointing at it. One file
+ * works for both: Codex's event names (SessionStart, SubagentStart,
+ * PreToolUse, PermissionRequest, PostToolUse, PreCompact, PostCompact,
+ * UserPromptSubmit, SubagentStop, Stop) are a strict subset of Claude
+ * Code's, and both use the same { matcher, hooks: [{ type, command }] }
+ * shape. As of this writing, Codex has an open bug where plugin-local
+ * hooks.json isn't actually loaded by the CLI yet (only ~/.codex/hooks.json
+ * is) — see github.com/openai/codex/issues/16430 — so this file is inert
+ * for Codex until that ships, but already works for Claude Code today.
+ */
+const HOOKS_JSON_CONTENT = `${JSON.stringify({ hooks: {} }, null, 2)}\n`;
+
 function toPascalCase(name: string): string {
   return name
     .split(/[-_]/)
@@ -259,6 +275,7 @@ async function scaffoldStandalonePlugin(options: ScaffoldOptions): Promise<strin
         join(targetDir, folder, "opencode-hooks.ts"),
         openCodeHooksFileContent(options.pluginName)
       );
+      await Bun.write(join(targetDir, folder, "hooks.json"), HOOKS_JSON_CONTENT);
     } else {
       await Bun.write(join(targetDir, folder, ".gitkeep"), "");
     }
@@ -302,8 +319,8 @@ async function scaffoldStandalonePlugin(options: ScaffoldOptions): Promise<strin
       cursor: { "rules/": ".cursor/rules/" },
       windsurf: { "rules/": ".windsurf/rules/" },
       kiro: { "rules/": ".kiro/steering/" },
-      opencode: { "skills/": "skills/", "commands/": "commands/" },
-      _default: { "skills/": "skills/", "commands/": "commands/" },
+      opencode: { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" },
+      _default: { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" },
     },
   });
 
@@ -357,6 +374,7 @@ async function scaffoldPluginInMarketplace(options: ScaffoldOptions, cwd: string
         join(targetDir, folder, "opencode-hooks.ts"),
         openCodeHooksFileContent(options.pluginName)
       );
+      await Bun.write(join(targetDir, folder, "hooks.json"), HOOKS_JSON_CONTENT);
     } else {
       await Bun.write(join(targetDir, folder, ".gitkeep"), "");
     }
@@ -389,8 +407,8 @@ async function scaffoldPluginInMarketplace(options: ScaffoldOptions, cwd: string
       cursor: { "rules/": ".cursor/rules/" },
       windsurf: { "rules/": ".windsurf/rules/" },
       kiro: { "rules/": ".kiro/steering/" },
-      opencode: { "skills/": "skills/", "commands/": "commands/" },
-      _default: { "skills/": "skills/", "commands/": "commands/" },
+      opencode: { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" },
+      _default: { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" },
     },
   });
 

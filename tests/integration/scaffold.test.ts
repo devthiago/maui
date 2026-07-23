@@ -52,8 +52,26 @@ describe("scaffoldPlugin", () => {
         repo: "example-user/my-plugin",
         marketplaceName: "my-plugin",
       });
-      expect(maui.targets._default).toEqual({ "skills/": "skills/", "commands/": "commands/" });
-      expect(maui.targets.opencode).toEqual({ "skills/": "skills/", "commands/": "commands/" });
+      expect(maui.targets._default).toEqual({
+        "skills/": "skills/",
+        "commands/": "commands/",
+        "agents/": "agents/",
+      });
+      expect(maui.targets.opencode).toEqual({
+        "skills/": "skills/",
+        "commands/": "commands/",
+        "agents/": "agents/",
+      });
+    });
+  });
+
+  it("scaffolds an empty hooks/hooks.json, the shared default hooks path for Claude Code and Codex", async () => {
+    await withTmpDir(async (root) => {
+      const targetDir = join(root, "my-plugin");
+      await scaffoldPlugin({ pluginName: "my-plugin", githubUser: "example-user", targetDir });
+
+      const hooksJson = await Bun.file(join(targetDir, "hooks", "hooks.json")).json();
+      expect(hooksJson).toEqual({ hooks: {} });
     });
   });
 

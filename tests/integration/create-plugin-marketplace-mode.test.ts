@@ -32,6 +32,7 @@ describe("scaffoldPlugin in marketplace mode", () => {
       expect(await Bun.file(join(pluginDir, ".codex-plugin", "plugin.json")).exists()).toBe(true);
       expect(await Bun.file(join(pluginDir, "skills", ".gitkeep")).exists()).toBe(true);
       expect(await Bun.file(join(pluginDir, "hooks", "opencode-hooks.ts")).exists()).toBe(true);
+      expect(await Bun.file(join(pluginDir, "hooks", "hooks.json")).json()).toEqual({ hooks: {} });
       const pkg = await Bun.file(join(pluginDir, "package.json")).json();
       expect(pkg.dependencies["@opencode-ai/plugin"]).toBeDefined();
 
@@ -58,7 +59,11 @@ describe("scaffoldPlugin in marketplace mode", () => {
       });
       expect(maui.targets.grok).toEqual({ marketplace: true, repo: "example-user/my-marketplace" });
       expect(maui.targets.cursor).toEqual({ "rules/": ".cursor/rules/" });
-      expect(maui.targets._default).toEqual({ "skills/": "skills/", "commands/": "commands/" });
+      expect(maui.targets._default).toEqual({
+        "skills/": "skills/",
+        "commands/": "commands/",
+        "agents/": "agents/",
+      });
     });
   });
 

@@ -241,6 +241,39 @@ Cursor/Windsurf.
 - **Generic `.agents` fallback** — the always-on adapter described above;
   also what any detected-but-otherwise-unlisted agent effectively gets.
 
+### Shared `hooks/hooks.json` (Claude Code + Codex)
+
+Unlike OpenCode's fixed-convention `hooks/opencode-hooks.ts` above, Claude
+Code and Codex plugin hooks are both native-marketplace concerns — maui
+never places or symlinks this file itself, it just scaffolds a starting
+point the native installer picks up. Confirmed against each tool's own
+docs (code.claude.com/docs/en/plugins-reference,
+developers.openai.com/codex/plugins/build): both auto-discover
+`hooks/hooks.json` at the plugin root by convention, with no `plugin.json`
+field required to point at it, and both use the identical
+`{ "hooks": { "<Event>": [{ "matcher": ..., "hooks": [{ "type": "command",
+"command": ... }] }] } }` shape. `maui create`/`create-plugin` scaffold one
+empty `hooks/hooks.json` (`{ "hooks": {} }`) rather than separate
+`claude-hooks.json`/`codex-hooks.json` files, since a single file already
+works for both — Codex's supported event names (`SessionStart`,
+`SubagentStart`, `PreToolUse`, `PermissionRequest`, `PostToolUse`,
+`PreCompact`, `PostCompact`, `UserPromptSubmit`, `SubagentStop`, `Stop`) are
+a strict subset of Claude Code's much larger event list (`Setup`,
+`UserPromptExpansion`, `PostToolUseFailure`, `PostToolBatch`,
+`Notification`, `MessageDisplay`, `TaskCreated`, `TaskCompleted`,
+`StopFailure`, `TeammateIdle`, `InstructionsLoaded`, `ConfigChange`,
+`CwdChanged`, `FileChanged`, `WorktreeCreate`, `WorktreeRemove`,
+`Elicitation`, `ElicitationResult`, `SessionEnd`, and more), so an
+event-name collision or schema mismatch between the two isn't possible —
+worst case Codex ignores an event name it doesn't recognize.
+
+**Known caveat**: as of this writing, Codex has an open bug
+(github.com/openai/codex/issues/16430) where plugin-bundled `hooks.json` is
+documented but not actually loaded by the CLI at runtime — only the global
+`~/.codex/hooks.json` is scanned. The scaffolded file is inert for real
+Codex installs until that ships, but already works for Claude Code today.
+Re-check this before relying on it in anger.
+
 ### Symlinking rule: only final files/folders, never the parent
 
 For every symlink adapter, the destination **container** folder (`skills/`,
@@ -343,11 +376,13 @@ Two kinds of entries under `targets`, matching the two adapter categories:
     },
     "opencode": {
       "skills/": "skills/",
-      "commands/": "commands/"
+      "commands/": "commands/",
+      "agents/": "agents/"
     },
     "_default": {
       "skills/": "skills/",
-      "commands/": "commands/"
+      "commands/": "commands/",
+      "agents/": "agents/"
     }
   },
   "postinstall": "postinstall.ts",
@@ -484,7 +519,11 @@ current working directory:
 this project already had): prompts for GitHub username/org, description,
 license; creates `<plugin-name>/` with the common shared source folders
 (`skills/`, `agents/`, `commands/`, `rules/`, `prompts/`, `hooks/`, each with
-a `.gitkeep`); generates `.claude-plugin/plugin.json` +
+a `.gitkeep` — except `hooks/`, which gets `opencode-hooks.ts` (see
+**Symlink adapters** above) and an empty `hooks.json` (`{ "hooks": {} }`), the
+default hooks path both Claude Code and Codex auto-discover at the plugin
+root with no `plugin.json` field needed — see **Shared `hooks/hooks.json`**
+below); generates `.claude-plugin/plugin.json` +
 `.claude-plugin/marketplace.json` (self-hosted single-plugin marketplace,
 now including an `owner: { name: <githubUser> }` field, confirmed present in
 real marketplace.json files) + `.codex-plugin/plugin.json` +
