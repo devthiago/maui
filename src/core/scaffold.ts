@@ -320,6 +320,7 @@ async function scaffoldStandalonePlugin(options: ScaffoldOptions): Promise<strin
       windsurf: { "rules/": ".windsurf/rules/" },
       kiro: { "rules/": ".kiro/steering/" },
       opencode: { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" },
+      kimi: { "skills/": "skills/", "agents/": "agents/", "commands/": "skills/" },
       _default: { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" },
     },
   });
@@ -408,6 +409,7 @@ async function scaffoldPluginInMarketplace(options: ScaffoldOptions, cwd: string
       windsurf: { "rules/": ".windsurf/rules/" },
       kiro: { "rules/": ".kiro/steering/" },
       opencode: { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" },
+      kimi: { "skills/": "skills/", "agents/": "agents/", "commands/": "skills/" },
       _default: { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" },
     },
   });

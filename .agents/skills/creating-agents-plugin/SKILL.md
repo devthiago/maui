@@ -1,6 +1,6 @@
 ---
 name: creating-agents-plugin
-description: Create a multi-agent plugin or marketplace repo that distributes skills, agents, commands, rules, prompts, and hooks across Claude Code, Codex, Gemini, Grok, Cursor, Windsurf, Kiro, and OpenCode from one shared source layout. Use when starting a new plugin/marketplace repo, or deciding how to structure files so many AI coding tools can consume them.
+description: Create a multi-agent plugin or marketplace repo that distributes skills, agents, commands, rules, prompts, and hooks across Claude Code, Codex, Gemini, Grok, Cursor, Windsurf, Kiro, OpenCode, and Kimi Code CLI from one shared source layout. Use when starting a new plugin/marketplace repo, or deciding how to structure files so many AI coding tools can consume them.
 ---
 
 # Creating a multi-agent plugin or marketplace repo
@@ -16,12 +16,16 @@ of two ways:
    folders by that tool's own default convention — you don't hand-place
    anything, you just make sure the right folders/files exist at the
    right paths and (for Claude/Codex/Gemini) write a small manifest.
-2. **File-based tools** (Cursor, Windsurf, Kiro, OpenCode, and the
-   generic `.agents/` convention many tools are converging on) have **no
-   install CLI at all** — you (or whatever's doing the installing) copy
-   or symlink the plugin's files directly into that tool's own
-   config folder, at either **project scope** (inside a repo) or
-   **global scope** (the user's home directory).
+2. **File-based tools** (Cursor, Windsurf, Kiro, OpenCode, Kimi Code CLI,
+   and the generic `.agents/` convention many tools are converging on)
+   have **no install CLI at all** — you (or whatever's doing the
+   installing) copy or symlink the plugin's files directly into that
+   tool's own config folder, at either **project scope** (inside a repo)
+   or **global scope** (the user's home directory). Note that "no install
+   CLI" means no *scriptable, non-interactive* one — OpenCode and Kimi
+   both have a real CLI binary, but their plugin/marketplace management is
+   TUI-only, which is what actually decides the category (see each tool's
+   own skill for why).
 
 For the exact folder names, manifest schema, and CLI commands **per
 tool**, use the matching skill:
@@ -32,7 +36,8 @@ tool**, use the matching skill:
 [creating-cursor-plugin](../creating-cursor-plugin/SKILL.md),
 [creating-windsurf-plugin](../creating-windsurf-plugin/SKILL.md),
 [creating-kiro-plugin](../creating-kiro-plugin/SKILL.md),
-[creating-opencode-plugin](../creating-opencode-plugin/SKILL.md).
+[creating-opencode-plugin](../creating-opencode-plugin/SKILL.md),
+[creating-kimi-plugin](../creating-kimi-plugin/SKILL.md).
 This skill covers the parts that are shared across all of them: the
 common layout, the safe way to symlink into file-based tools without
 clobbering other plugins, and how single-plugin vs. multi-plugin repos
@@ -52,6 +57,10 @@ my-plugin/
     └── opencode-hooks.ts  # OpenCode's distinct plugin-loader convention — see creating-opencode-plugin
 ```
 
+(Kimi Code CLI's hooks live inside its own managed-plugin manifest, not a
+bare `hooks/` file this shared layout can target — see
+[creating-kimi-plugin](../creating-kimi-plugin/SKILL.md).)
+
 Not every tool reads every folder — see the matrix below. The point of a
 shared layout isn't "every tool uses every folder," it's "you write a
 skill/rule/hook once, in one place, and each tool's own native discovery
@@ -59,14 +68,14 @@ skill/rule/hook once, in one place, and each tool's own native discovery
 
 ### Per-tool folder support matrix
 
-| Folder | Claude Code | Codex | Gemini | Grok | Cursor | Windsurf | Kiro | OpenCode |
-|---|---|---|---|---|---|---|---|---|
-| `skills/` | ✅ native | ✅ native | ❌ | ✅ (`.grok/skills/` convention) | ✅ (`.cursor/skills/`) | ❌ | ❌ | ✅ (`.opencode/skills/`) |
-| `agents/` | ✅ native | ❌ (no concept) | ❌ | ❌ (unconfirmed) | ✅ (`.cursor/agents/`) | ❌ | ❌ | ✅ (`.opencode/agents/`) |
-| `commands/` | ✅ native (legacy) | ❌ (no concept) | ❌ (uses TOML `commands/`, incompatible format) | ❌ | ✅ (`.cursor/commands/`, legacy) | ✅ as `workflows/` (different name/format) | ❌ | ✅ (`.opencode/commands/`) |
-| `rules/` | ❌ (no dedicated concept — use skills or `CLAUDE.md`) | ❌ | ❌ (uses `GEMINI.md`) | ❌ | ✅ (`.cursor/rules/`) | ✅ (`.windsurf/rules/`) | ✅ (`.kiro/steering/`) | ✅ (`.opencode/rules/`) |
-| `hooks/hooks.json` | ✅ native | ✅ native (currently inert — see creating-codex-plugin) | ❌ | ✅ (`.grok/hooks/` convention, unconfirmed schema match) | ❌ | ❌ | ✅ different concept, `.kiro/hooks/` | ❌ |
-| `hooks/opencode-hooks.ts` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ (its one specific convention) |
+| Folder | Claude Code | Codex | Gemini | Grok | Cursor | Windsurf | Kiro | OpenCode | Kimi |
+|---|---|---|---|---|---|---|---|---|---|
+| `skills/` | ✅ native | ✅ native | ❌ | ✅ (`.grok/skills/` convention) | ✅ (`.cursor/skills/`) | ❌ | ❌ | ✅ (`.opencode/skills/`) | ✅ (`.kimi-code/skills/`) |
+| `agents/` | ✅ native | ❌ (no concept) | ❌ | ❌ (unconfirmed) | ✅ (`.cursor/agents/`) | ❌ | ❌ | ✅ (`.opencode/agents/`) | ✅ (`.kimi-code/agents/`) |
+| `commands/` | ✅ native (legacy) | ❌ (no concept) | ❌ (uses TOML `commands/`, incompatible format) | ❌ | ✅ (`.cursor/commands/`, legacy) | ✅ as `workflows/` (different name/format) | ❌ | ✅ (`.opencode/commands/`) | ❌ (flat `.md` in `skills/` doubles as a command) |
+| `rules/` | ❌ (no dedicated concept — use skills or `CLAUDE.md`) | ❌ | ❌ (uses `GEMINI.md`) | ❌ | ✅ (`.cursor/rules/`) | ✅ (`.windsurf/rules/`) | ✅ (`.kiro/steering/`) | ✅ (`.opencode/rules/`) | ❌ (uses `AGENTS.md`) |
+| `hooks/hooks.json` | ✅ native | ✅ native (currently inert — see creating-codex-plugin) | ❌ | ✅ (`.grok/hooks/` convention, unconfirmed schema match) | ❌ | ❌ | ✅ different concept, `.kiro/hooks/` | ❌ | ❌ (hooks live inside `kimi.plugin.json` only) |
+| `hooks/opencode-hooks.ts` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ (its one specific convention) | ❌ |
 
 Gaps in this table aren't bugs — they're real differences in what each
 tool's agent model supports. Don't force a folder onto a tool that has no
@@ -94,10 +103,13 @@ discovers plugins purely by folder convention.
 
 ### File-based tools need you to place files into their own folder
 
-Cursor, Windsurf, Kiro, and OpenCode have no install CLI. To make a
-plugin's content available to one of these, its files need to end up
-physically inside that tool's own dot-folder — `.cursor/`, `.windsurf/`,
-`.kiro/`, `.opencode/` — either:
+Cursor, Windsurf, Kiro, OpenCode, and Kimi have no *scriptable* install
+CLI (OpenCode and Kimi both have a real CLI binary, but plugin/marketplace
+management on both is TUI-only, an in-session slash command with no
+outside-the-session equivalent). To make a plugin's content available to
+one of these, its files need to end up physically inside that tool's own
+dot-folder — `.cursor/`, `.windsurf/`, `.kiro/`, `.opencode/`,
+`.kimi-code/` — either:
 
 - **Project scope**: inside the specific repo/workspace you're working in
   (e.g. `<project>/.cursor/skills/`).
@@ -108,8 +120,8 @@ The **same "always-on `.agents/` fallback" convention** applies at both
 scopes too — a plain `.agents/skills/`, `.agents/commands/`,
 `.agents/agents/` structure at either `<project>/.agents/` or
 `~/.agents/` — because several tools' own skill/command/agent loaders
-(OpenCode's among them) already scan that path by convention on top of
-their own dedicated dot-folder. Populating `.agents/` is a good default
+(OpenCode's and Kimi's among them) already scan that path by convention on
+top of their own dedicated dot-folder. Populating `.agents/` is a good default
 safety net: an agent that isn't specifically supported yet, or one whose
 detection missed, still has somewhere to find the plugin's files.
 
@@ -226,7 +238,8 @@ plugins.
 6. **Push to a git repo.** Native-marketplace tools install straight from
    the git URL; file-based tools need their per-tool skill's guidance for
    getting files into `.cursor/`, `.windsurf/`, `.kiro/`, `.opencode/`,
-   or the generic `.agents/` fallback, at project or global scope.
+   `.kimi-code/`, or the generic `.agents/` fallback, at project or global
+   scope.
 7. **Version consistently.** Bump `version` in every manifest you shipped
    together on each release — `.claude-plugin/plugin.json`,
    `.codex-plugin/plugin.json`, `gemini-extension.json`, and (for a

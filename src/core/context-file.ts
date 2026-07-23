@@ -40,9 +40,15 @@ interface ContextFileConvention {
  * steering folder, not bare `~/AGENTS.md` — a real, distinct path). Grok:
  * checked docs.x.ai/build/cli/reference again for this task — it documents
  * a `grok memory clear [--workspace|--global|--all]` subcommand but no
- * filename or path convention, so it stays genuinely unconfirmed. Every
- * other/unconfirmed agent falls back to the generic .agents convention's
- * AGENTS.md rather than a guessed filename — see SPEC.md Open Question #8.
+ * filename or path convention, so it stays genuinely unconfirmed. Kimi:
+ * kimi.com/code/docs/en/kimi-code-cli/customization/agents.html and related
+ * pages confirm project-root AGENTS.md and, since `kimiAdapter` has a real
+ * `globalRoot` (unlike Cursor/Windsurf), an independently reachable global
+ * path at `$KIMI_CODE_HOME/AGENTS.md` (defaults to `~/.kimi-code/AGENTS.md`)
+ * — worth its own entry rather than falling through to the bare
+ * `~/AGENTS.md` fallback below. Every other/unconfirmed agent falls back to
+ * the generic .agents convention's AGENTS.md rather than a guessed filename
+ * — see SPEC.md Open Question #8.
  */
 const CONTEXT_FILES: Record<string, ContextFileConvention> = {
   "claude-code": { global: ".claude/CLAUDE.md", project: "CLAUDE.md" },
@@ -52,6 +58,7 @@ const CONTEXT_FILES: Record<string, ContextFileConvention> = {
   cursor: { global: "AGENTS.md", project: "AGENTS.md" },
   windsurf: { global: ".codeium/windsurf/memories/global_rules.md", project: "AGENTS.md" },
   kiro: { global: ".kiro/steering/AGENTS.md", project: "AGENTS.md" },
+  kimi: { global: ".kimi-code/AGENTS.md", project: "AGENTS.md" },
 };
 
 const FALLBACK: ContextFileConvention = { global: "AGENTS.md", project: "AGENTS.md" };

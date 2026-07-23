@@ -62,6 +62,11 @@ describe("scaffoldPlugin", () => {
         "commands/": "commands/",
         "agents/": "agents/",
       });
+      expect(maui.targets.kimi).toEqual({
+        "skills/": "skills/",
+        "agents/": "agents/",
+        "commands/": "skills/",
+      });
     });
   });
 

@@ -5,9 +5,9 @@
 `maui` is a CLI that installs "plugins" (skills, agents, commands, hooks,
 rules, prompts, MCP configs, etc.) into the right global config location for
 whichever AI coding agent/tool is present on the machine — Claude Code,
-Cursor, Codex CLI, Gemini CLI, OpenCode, Grok CLI, GitHub Copilot,
-Antigravity, Windsurf, Kiro, and any other tool via a generic `.agents`
-folder fallback —
+Cursor, Codex CLI, Gemini CLI, OpenCode, Grok CLI, Kimi Code CLI, GitHub
+Copilot, Antigravity, Windsurf, Kiro, and any other tool via a generic
+`.agents` folder fallback —
 without the user ever hand-copying files or hand-running each tool's own
 installer.
 
@@ -27,8 +27,8 @@ per agent, does whichever of the two things is correct for that agent:
   install command. maui never hand-places files for these; the native tool
   owns that.
 - **Agents with no native plugin manager** (Cursor, Windsurf, Kiro,
-  OpenCode) — maui symlinks the plugin's files into that agent's config
-  folder itself, per the plugin's manifest.
+  OpenCode, Kimi Code CLI) — maui symlinks the plugin's files into that
+  agent's config folder itself, per the plugin's manifest.
 - **Always, regardless of the above**: the generic `.agents` global folder
   is populated as a fallback (see **Always-on `.agents` global fallback**).
 
@@ -111,7 +111,7 @@ Every adapter falls into exactly one of two categories. This determines what
 | Category | Agents | What `maui install` does | What `maui remove` does |
 |---|---|---|---|
 | **Native-marketplace** | Claude Code, Codex CLI, Gemini CLI, Grok CLI | Shells out to the agent's own marketplace/extension/plugin CLI, where a scriptable one is confirmed | Shells out to the agent's own uninstall CLI, where one exists |
-| **Symlink** | Cursor, Windsurf, Kiro, OpenCode | Symlinks the plugin's mapped files into the agent's config folder (OpenCode additionally gets a renamed `hooks/opencode-hooks.ts` symlink — see below) | Removes the symlinks maui created |
+| **Symlink** | Cursor, Windsurf, Kiro, OpenCode, Kimi Code CLI | Symlinks the plugin's mapped files into the agent's config folder (OpenCode additionally gets a renamed `hooks/opencode-hooks.ts` symlink — see below) | Removes the symlinks maui created |
 | **Always-on fallback** | generic `.agents` global folder | Populated on **every** `maui install`, unconditionally — not gated on any agent being detected | Removed alongside the plugin's other links when the plugin is removed |
 
 maui never hand-places files for a native-marketplace agent, and never shells
@@ -238,6 +238,35 @@ Cursor/Windsurf.
   and add `@opencode-ai/plugin` to the generated `package.json`. Absent
   entirely, this is a no-op — not every plugin needs OpenCode-specific
   hooks.
+- **Kimi Code CLI** — confirmed at kimi.com/code/docs/en/kimi-code-cli/
+  customization/{skills,agents,plugins}.html. Root: `~/.kimi-code/`
+  (global, `$KIMI_CODE_HOME` if overridden) / `.kimi-code/` (project).
+  Kimi's own plugin/marketplace management (`/plugins install <url>`,
+  `/plugins marketplace add`) is **TUI-only** — every documented example is
+  a slash command typed inside a running `kimi` session, with no plain
+  shell subcommand equivalent — which is what makes it a symlink adapter
+  rather than native-marketplace, the same reasoning that applies to
+  OpenCode. Unlike OpenCode, Kimi's plugin-install mechanism plays no role
+  here at all (there's no hooks-style fixed-convention file to place); maui
+  only ever targets Kimi's independent, plain-folder Skills and Agents
+  conventions — `skills/` and `agents/`, symlinked per-child into
+  `.kimi-code/skills/` and `.kimi-code/agents/` exactly like any other
+  symlink adapter. No dedicated `rules/` target — Kimi has no rules
+  concept, using `AGENTS.md` for standing instructions instead (see the
+  context-file table below). No dedicated `commands/` *destination*
+  either — Kimi's customization docs list only
+  mcp/skills/plugins/datasource/agents/hooks, and a flat `.md` file placed
+  directly in a skills directory is itself treated as a skill (its
+  equivalent of a Claude Code "command") — but a plugin's `commands/`
+  *source* folder is still worth wiring, routed into the same `skills/`
+  destination rather than a folder of its own:
+  `"kimi": { "skills/": "skills/", "agents/": "agents/", "commands/":
+  "skills/" }`. Two source keys sharing one destination is fine — each
+  `linkChildren` call is independent and just adds more children to the
+  same real directory. Detection is CLI-first like OpenCode
+  (`Bun.which("kimi")`), not folder-existence, since Kimi is launched via
+  its own `kimi` binary and a stray `~/.kimi-code` folder proves nothing
+  about whether it's installed.
 - **Generic `.agents` fallback** — the always-on adapter described above;
   also what any detected-but-otherwise-unlisted agent effectively gets.
 
@@ -455,6 +484,7 @@ per-agent filenames themselves:
 | Windsurf | `~/.codeium/windsurf/memories/global_rules.md` | `<project>/AGENTS.md` | global confirmed (docs.devin.ai/desktop/cascade/memories); no current single-file project convention confirmed (`.windsurfrules` is documented as legacy) — same "moot in practice" note as Cursor, `windsurfAdapter` has no `globalRoot` either |
 | Kiro | `~/.kiro/steering/AGENTS.md` | `<project>/AGENTS.md` | both confirmed (kiro.dev/docs/steering/) — and, unlike Cursor/Windsurf, actually reachable: `kiroAdapter` has a real `globalRoot` |
 | Grok | — | — | checked again for this task (docs.x.ai/build/cli/reference) — documents a `grok memory clear` subcommand but no filename/path convention; stays genuinely unconfirmed, falls back to `AGENTS.md` |
+| Kimi Code CLI | `~/.kimi-code/AGENTS.md` | `<project>/AGENTS.md` | both confirmed (kimi.com/code/docs/en/kimi-code-cli/customization/agents.html) — and, like Kiro, actually reachable: `kimiAdapter` has a real `globalRoot` |
 | generic `.agents` fallback | `~/AGENTS.md` | `<project>/AGENTS.md` | maui's own convention, always available as the fallback `contextFile` when an adapter has no known one |
 
 Note Claude Code explicitly does **not** read `AGENTS.md` on its own — if a
@@ -736,8 +766,8 @@ per-plugin, unchanged in shape from the v1 model.
     `grok plugin install <plugin-name>@<marketplace-name>` per selected
     plugin, matching Claude Code's shape. Carries the same "corroborated
     but not live-CLI-verified" caveat as Open Question #2c.
-- **Symlink adapters** (Cursor, Windsurf, Kiro, OpenCode, `.agents`
-  fallback): install each selected plugin exactly as today, except the
+- **Symlink adapters** (Cursor, Windsurf, Kiro, OpenCode, Kimi Code CLI,
+  `.agents` fallback): install each selected plugin exactly as today, except the
   plugin's `maui.json`/source root is `<cache>/plugins/<plugin-name>/`
   instead of the cache root.
 
@@ -830,10 +860,11 @@ export const claudeCodeAdapter: NativeMarketplaceAdapter = {
 - **Always do**:
   - Detect agents before acting; only touch agents actually present (skip
     silently, report what was skipped). For native-marketplace agents (and
-    OpenCode, despite being a symlink adapter), "present" means the agent's
-    own CLI binary resolves on `$PATH` — a config folder existing is not
-    sufficient, since maui can't run
-    `claude`/`codex`/`gemini`/`opencode`/`grok` commands without the binary.
+    OpenCode/Kimi Code CLI, despite being symlink adapters), "present" means
+    the agent's own CLI binary resolves on `$PATH` — a config folder
+    existing is not sufficient, since maui can't run
+    `claude`/`codex`/`gemini`/`opencode`/`grok`/`kimi` commands without the
+    binary.
   - Populate the global `~/.agents/` fallback on every install, unconditionally,
     regardless of `--scope` or which specific agents were detected.
   - For symlink adapters: cache plugin source once under

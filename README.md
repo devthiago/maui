@@ -7,9 +7,9 @@
 **A global, multi-agent toolset installer.** One command installs a plugin's
 skills, agents, commands, rules, and hooks into whichever AI coding agents
 you actually have on your machine — Claude Code, Codex CLI, Gemini CLI,
-OpenCode, Grok CLI, Cursor, Windsurf, and Kiro — using each agent's own
-native install mechanism where one exists, and a clean symlink strategy
-everywhere else.
+OpenCode, Grok CLI, Kimi Code CLI, Cursor, Windsurf, and Kiro — using each
+agent's own native install mechanism where one exists, and a clean symlink
+strategy everywhere else.
 
 ```
 $ maui install github.com/example-user/example-plugin
@@ -111,23 +111,26 @@ a single file on disk — it shells out to that agent's own CLI
 the agent manage its own cache, versioning, and enable/disable state
 exactly as if you'd typed the command yourself.
 
-**Symlink agents** (Cursor, Windsurf, Kiro, OpenCode, and the always-on
-`.agents/` fallback described below) have no such install mechanism — just
-a folder convention they read from. For these, maui fetches the plugin's
-source once into its own cache (`~/.maui/plugins/<name>`) and symlinks each
-individual skill/command/rule *file* into the agent's folder — never the
-parent folder itself, so two different plugins can safely contribute into
-the same `skills/` directory without clobbering each other. OpenCode is a
-symlink agent too, even though it has a real CLI — see
+**Symlink agents** (Cursor, Windsurf, Kiro, OpenCode, Kimi Code CLI, and the
+always-on `.agents/` fallback described below) have no such install
+mechanism — just a folder convention they read from. For these, maui
+fetches the plugin's source once into its own cache
+(`~/.maui/plugins/<name>`) and symlinks each individual skill/command/rule
+*file* into the agent's folder — never the parent folder itself, so two
+different plugins can safely contribute into the same `skills/` directory
+without clobbering each other. OpenCode and Kimi are symlink agents too,
+even though both have a real CLI — see
 [OpenCode Plugins vs. Claude/Codex Hooks](#opencode-plugins-vs-claudecodex-hooks)
-below for why.
+below for why (Kimi's plugin/marketplace management is TUI-only for the
+same reason: no scriptable, non-interactive install command exists).
 
 **The `.agents/` fallback is always populated**, on every install,
 regardless of which agents were actually detected. It's a safety net: even
 on a machine where maui doesn't recognize a single installed agent, the
 plugin's files still land somewhere predictable (`~/.agents/skills/…`), and
-OpenCode's own skill/command/agent loaders already read from exactly that
-path by convention, on top of its own dedicated `.config/opencode/` target.
+both OpenCode's and Kimi's own skill/command/agent loaders already read
+from exactly that path by convention, on top of their own dedicated
+`.config/opencode/`/`.kimi-code/` targets.
 
 **A failing agent never blocks the others.** If Claude Code is installed
 but the plugin hasn't been pushed to GitHub yet, `claude plugin install`
@@ -161,16 +164,18 @@ pre-existing file <span style="color:#C2A486">🪝maui</span>   would otherwise 
 | **Cursor** | Symlink | `.cursor/rules/` — **project scope only**, Cursor has no global folder to install into |
 | **Windsurf** | Symlink | `.windsurf/rules/` — **project scope only**, Windsurf's global rules file isn't a directory maui can symlink into |
 | **OpenCode** | Symlink | `~/.config/opencode/…` (global) / `.opencode/…` (project) — plus a renamed `hooks/opencode-hooks.ts` symlink, see below |
+| **Kimi Code CLI** | Symlink | `~/.kimi-code/…` (global, `$KIMI_CODE_HOME` if overridden) / `.kimi-code/…` (project) — `skills/` and `agents/`, plus `commands/` routed into `skills/` |
 | **Everything else** | Symlink (fallback) | `~/.agents/` or `<project>/.agents/` — always populated, regardless of what's detected |
 
 An agent only gets touched if maui actually finds it: native-marketplace
 agents are detected by checking whether their CLI binary resolves on
 `$PATH` (not just whether a config folder exists); symlink agents are
-detected by their known config folder existing. OpenCode is the one
-exception on the symlink side — at global scope it's also detected by
-checking whether `opencode` resolves on `$PATH`, since it's a CLI-first
-tool and a stray `~/.config/opencode` folder proves nothing. Anything
-undetected is skipped and reported, never silently attempted.
+detected by their known config folder existing. OpenCode and Kimi are the
+exceptions on the symlink side — at global scope they're also detected by
+checking whether `opencode`/`kimi` resolves on `$PATH`, since both are
+CLI-first tools and a stray `~/.config/opencode` or `~/.kimi-code` folder
+proves nothing. Anything undetected is skipped and reported, never
+silently attempted.
 
 ## OpenCode Plugins vs. Claude/Codex Hooks
 
@@ -197,7 +202,8 @@ optional:
 
 1. **Files** (`skills/`, `commands/`, `agents/`, `rules/`) — declared in
    `maui.json`'s `opencode` target exactly like any other symlink agent,
-   e.g. `"opencode": { "skills/": "skills/", "commands/": "commands/" }`.
+   e.g. `"opencode": { "skills/": "skills/", "commands/": "commands/",
+   "agents/": "agents/" }`.
 2. **Hooks** (`hooks/opencode-hooks.ts`) — a fixed-convention file `maui
    create`/`create-plugin` scaffold for you. On install, <span style="color:#C2A486">🪝maui</span>   symlinks it
    into `~/.config/opencode/plugins/<plugin-name>.ts` (global) or
@@ -427,8 +433,9 @@ its root. It's the single source of truth for what gets installed where:
     "kiro": { "rules/": ".kiro/steering/" },
     "cursor": { "rules/": ".cursor/rules/" },
     "windsurf": { "rules/": ".windsurf/rules/" },
-    "opencode": { "skills/": "skills/", "commands/": "commands/" },
-    "_default": { "skills/": "skills/", "commands/": "commands/" }
+    "opencode": { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" },
+    "kimi": { "skills/": "skills/", "agents/": "agents/", "commands/": "skills/" },
+    "_default": { "skills/": "skills/", "commands/": "commands/", "agents/": "agents/" }
   },
   "postinstall": "postinstall.ts",
   "postremove": "postremove.ts"
@@ -444,7 +451,8 @@ Each key in `targets` is an agent ID. Two shapes:
   *immediate child* of `source/` gets its own symlink under `dest/`
   (resolved against that agent's config root) — never the folder itself,
   which is what lets multiple plugins safely share one `skills/` directory.
-  `opencode` is this shape too (it has no install CLI — see
+  `opencode` and `kimi` are this shape too (neither has a scriptable
+  install CLI — see
   [OpenCode Plugins vs. Claude/Codex Hooks](#opencode-plugins-vs-claudecodex-hooks));
   if the plugin also ships `hooks/opencode-hooks.ts`, that file is
   symlinked and renamed automatically and doesn't need an entry here.
@@ -745,7 +753,7 @@ Declining aborts that one hook; the plugin's files still install normally.
 
 ## Contributing
 
-<span style="color:#C2A486">🪝maui</span>   is spec-driven: `SPEC.md` is the source of truth for intended
+<span style="color:#C2A486">🪝maui</span> is spec-driven: `SPEC.md` is the source of truth for intended
 behavior, and `tasks/plan.md`/`tasks/todo.md` track how that behavior gets
 built and verified, phase by phase. See
 [CONTRIBUTION.md](CONTRIBUTION.md) for the full workflow — starting from

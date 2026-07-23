@@ -3,6 +3,7 @@ import { kiroAdapter } from "./kiro";
 import { cursorAdapter } from "./cursor";
 import { windsurfAdapter } from "./windsurf";
 import { openCodeAdapter } from "./opencode";
+import { kimiAdapter } from "./kimi";
 import { claudeCodeAdapter } from "./claude-code";
 import { geminiAdapter } from "./gemini";
 import { codexAdapter } from "./codex";
@@ -32,6 +33,7 @@ const SYMLINK_ADAPTERS: Record<string, GlobalSymlinkAdapter> = {
   [cursorAdapter.id]: cursorAdapter,
   [windsurfAdapter.id]: windsurfAdapter,
   [openCodeAdapter.id]: openCodeAdapter,
+  [kimiAdapter.id]: kimiAdapter,
 };
 
 const NATIVE_MARKETPLACE_ADAPTERS: Record<string, NativeMarketplaceAdapter> = {
