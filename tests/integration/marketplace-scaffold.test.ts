@@ -49,8 +49,18 @@ describe("scaffoldMarketplace", () => {
 
       const pkg = await Bun.file(join(targetDir, "package.json")).json();
       expect(pkg.scripts["version:bump"]).toBeDefined();
+      expect(pkg.devDependencies).toEqual({
+        "@types/bun": "^1.3.14",
+        "@types/node": "^26.1.1",
+        typescript: "^7.0.2",
+      });
 
       expect(await Bun.file(join(targetDir, "scripts", "bump-version.ts")).exists()).toBe(true);
+
+      const tsconfig = await Bun.file(join(targetDir, "tsconfig.json")).json();
+      expect(tsconfig.compilerOptions.strict).toBe(true);
+      expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
+      expect(tsconfig.include).toBeUndefined();
     });
   });
 

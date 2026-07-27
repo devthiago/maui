@@ -656,6 +656,63 @@ native catalog format) — its plugins are just files maui places directly, so
 there's nothing for a marketplace-mode repo to catalog on OpenCode's behalf
 regardless of plugin count.
 
+### Root `tsconfig.json` and typecheck devDependencies (standalone plugin + marketplace only)
+
+Both `scaffoldStandalonePlugin` and `scaffoldMarketplace` also write a
+`tsconfig.json` next to `package.json`, and add a `devDependencies` block,
+so the scaffolded repo can run `tsc --noEmit` out of the box — the same
+`bun run lint` convention this repo itself uses:
+
+```json
+"devDependencies": {
+  "@types/bun": "^1.3.14",
+  "@types/node": "^26.1.1",
+  "typescript": "^7.0.2"
+}
+```
+
+```json
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "types": ["bun"],
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false
+  }
+}
+```
+
+No `include` field — unlike maui's own root `tsconfig.json` (scoped to
+`src`/`tests`), a scaffolded plugin or marketplace repo has no fixed
+source layout (its folders are `skills/`, `agents/`, `hooks/`, `scripts/`,
+etc.), so TypeScript's default of everything under the project root
+applies. These versions are pinned independently of whatever maui's own
+root `package.json`/`tsconfig.json` happens to use at any given time —
+scaffolded repos are not meant to track maui's own toolchain, so this is a
+one-time literal copy, not a shared constant re-exported from maui's
+config.
+
+**`scaffoldPluginInMarketplace` (a plugin folder added inside an existing
+marketplace repo) does not get its own copy of either file.** It relies on
+the marketplace root's `tsconfig.json`/`devDependencies`, generated once
+by `create-marketplace` — the same reasoning as `gemini-extension.json`
+staying repo-level instead of being duplicated per plugin.
+
 ### `maui create <name>`
 
 Thin dispatcher, not a third independent implementation:

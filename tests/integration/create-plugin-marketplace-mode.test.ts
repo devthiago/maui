@@ -35,9 +35,12 @@ describe("scaffoldPlugin in marketplace mode", () => {
       expect(await Bun.file(join(pluginDir, "hooks", "hooks.json")).json()).toEqual({ hooks: {} });
       const pkg = await Bun.file(join(pluginDir, "package.json")).json();
       expect(pkg.dependencies["@opencode-ai/plugin"]).toBeDefined();
+      expect(pkg.devDependencies).toBeUndefined();
 
       expect(await Bun.file(join(pluginDir, ".claude-plugin", "marketplace.json")).exists()).toBe(false);
       expect(await Bun.file(join(pluginDir, "gemini-extension.json")).exists()).toBe(false);
+      // relies on the marketplace root's tsconfig/devDependencies instead of its own copy
+      expect(await Bun.file(join(pluginDir, "tsconfig.json")).exists()).toBe(false);
 
       const maui = await Bun.file(join(pluginDir, "maui.json")).json();
       expect(maui.name).toBe("plugin-one");

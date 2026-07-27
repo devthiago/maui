@@ -106,6 +106,25 @@ describe("scaffoldPlugin", () => {
     });
   });
 
+  it("adds typecheck devDependencies and a root tsconfig.json", async () => {
+    await withTmpDir(async (root) => {
+      const targetDir = join(root, "my-plugin");
+      await scaffoldPlugin({ pluginName: "my-plugin", githubUser: "example-user", targetDir });
+
+      const pkg = await Bun.file(join(targetDir, "package.json")).json();
+      expect(pkg.devDependencies).toEqual({
+        "@types/bun": "^1.3.14",
+        "@types/node": "^26.1.1",
+        typescript: "^7.0.2",
+      });
+
+      const tsconfig = await Bun.file(join(targetDir, "tsconfig.json")).json();
+      expect(tsconfig.compilerOptions.strict).toBe(true);
+      expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
+      expect(tsconfig.include).toBeUndefined();
+    });
+  });
+
   it("initializes git with no remote and no commits", async () => {
     await withTmpDir(async (root) => {
       const targetDir = join(root, "my-plugin");

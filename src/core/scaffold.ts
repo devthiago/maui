@@ -25,6 +25,42 @@ const COMMON_FOLDERS = ["skills", "agents", "commands", "rules", "prompts", "hoo
 const OPENCODE_PLUGIN_VERSION = "^1.18.3";
 
 /**
+ * Pinned independently of whatever maui's own root package.json/tsconfig.json
+ * happen to use — scaffolded repos aren't meant to track maui's own toolchain.
+ * Only for scaffoldStandalonePlugin/scaffoldMarketplace; a plugin folder added
+ * via scaffoldPluginInMarketplace relies on the marketplace root's copy.
+ */
+const SCAFFOLD_TYPECHECK_DEV_DEPENDENCIES = {
+  "@types/bun": "^1.3.14",
+  "@types/node": "^26.1.1",
+  typescript: "^7.0.2",
+};
+
+const SCAFFOLD_TSCONFIG_JSON = {
+  compilerOptions: {
+    lib: ["ESNext"],
+    target: "ESNext",
+    module: "Preserve",
+    moduleDetection: "force",
+    jsx: "react-jsx",
+    allowJs: true,
+    types: ["bun"],
+    moduleResolution: "bundler",
+    allowImportingTsExtensions: true,
+    verbatimModuleSyntax: true,
+    noEmit: true,
+    strict: true,
+    skipLibCheck: true,
+    noFallthroughCasesInSwitch: true,
+    noUncheckedIndexedAccess: true,
+    noImplicitOverride: true,
+    noUnusedLocals: false,
+    noUnusedParameters: false,
+    noPropertyAccessFromIndexSignature: false,
+  },
+};
+
+/**
  * hooks/hooks.json is the shared default hooks path both Claude Code and
  * Codex auto-discover at the plugin root (code.claude.com/docs/en/
  * plugins-reference, developers.openai.com/codex/plugins/build) — neither
@@ -337,7 +373,9 @@ async function scaffoldStandalonePlugin(options: ScaffoldOptions): Promise<strin
     dependencies: {
       "@opencode-ai/plugin": OPENCODE_PLUGIN_VERSION,
     },
+    devDependencies: SCAFFOLD_TYPECHECK_DEV_DEPENDENCIES,
   });
+  await writeJson(join(targetDir, "tsconfig.json"), SCAFFOLD_TSCONFIG_JSON);
 
   await mkdir(join(targetDir, "scripts"), { recursive: true });
   await Bun.write(join(targetDir, "scripts", "bump-version.ts"), BUMP_VERSION_SCRIPT);
@@ -497,7 +535,9 @@ export async function scaffoldMarketplace(options: MarketplaceScaffoldOptions): 
     scripts: {
       "version:bump": "bun run scripts/bump-version.ts",
     },
+    devDependencies: SCAFFOLD_TYPECHECK_DEV_DEPENDENCIES,
   });
+  await writeJson(join(targetDir, "tsconfig.json"), SCAFFOLD_TSCONFIG_JSON);
 
   await mkdir(join(targetDir, "scripts"), { recursive: true });
   await Bun.write(join(targetDir, "scripts", "bump-version.ts"), MARKETPLACE_BUMP_VERSION_SCRIPT);
